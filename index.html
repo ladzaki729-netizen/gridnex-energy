@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRIDNEX | Smart Microgrid Digital Twin</title>
+<style>
+:root{
+  --bg:#060e18;--panel:#0a1725;--panel2:#102338;--line:#203b50;
+  --cyan:#49d5ee;--blue:#4b9dff;--green:#50dfa8;--muted:#8199ad;--white:#edf6fc;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--white);font-family:Inter,Segoe UI,Arial,sans-serif}
+.app{height:100dvh;display:flex;flex-direction:column}
+header{height:74px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px;background:linear-gradient(100deg,#0b1a29 0%,#0a1725 58%,#0d2031 100%);border-bottom:1px solid #25445a;z-index:5;box-shadow:0 8px 28px #0002}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border:1px solid #48cde8;border-radius:13px;display:grid;place-items:center;color:#7be7f7;background:linear-gradient(145deg,#143c52,#0b1c2b);box-shadow:0 0 24px #31c9e829,inset 0 0 16px #31c9e822;overflow:hidden}.logo svg{width:31px;height:31px;display:block;filter:drop-shadow(0 0 5px #39d8ed66)}
+.brand{gap:13px}.brand h1{font-size:21px;letter-spacing:3.8px}.brand h1 span{color:#65e6a8}.brand:after{content:"SMART MICROGRID";position:absolute;top:48px;left:86px;color:#7f9bad;font-size:7px;letter-spacing:2.1px}.nav-brand .logo{width:39px;height:39px}.nav-brand b{letter-spacing:2.4px}.nav-brand small{color:#55d8c0}
+.brand h1{font-size:20px;letter-spacing:3.4px;font-weight:780}.brand h1 span{color:var(--cyan)}
+.header-right{display:flex;align-items:center;gap:22px;font-size:10px;letter-spacing:1.15px}
+.online{color:var(--green)}.online i{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px #45dda0}
+main{position:relative;flex:1;min-height:0;display:flex;overflow:hidden}
+.scene-wrap{position:relative;flex:1;min-width:0;background:radial-gradient(ellipse at 48% 44%,#183449 0%,#0c1d2c 47%,#07121e 100%)}
+#scene3d{position:absolute;inset:0}
+.scene-heading{position:absolute;top:23px;left:26px;z-index:2;pointer-events:none;padding:12px 15px;border:1px solid #2a4a60;border-radius:10px;background:linear-gradient(110deg,#0a1a29d9,#0a1a2980);backdrop-filter:blur(8px);box-shadow:0 8px 24px #0002}
+.scene-heading h2{font-size:13px;letter-spacing:2.3px;font-weight:750}
+.scene-heading p{font-size:9px;color:#8ca9bd;letter-spacing:1.25px;margin-top:7px}
+.hint{position:absolute;bottom:18px;left:25px;color:#7894aa;font-size:10px;letter-spacing:.8px;z-index:2;pointer-events:none}
+.panel{width:310px;flex:none;background:linear-gradient(180deg,#0c1c2c 0%,#091522 100%);border-left:1px solid #25445a;padding:23px 18px;overflow:auto;transition:width .28s ease,padding .28s ease,opacity .2s ease;z-index:4;box-shadow:-12px 0 35px #00015}
+.panel.collapsed{width:0;padding-left:0;padding-right:0;opacity:0;overflow:hidden;border:0}
+.panel h3{font-size:10px;letter-spacing:2px;color:#a9c1d2;margin:2px 0 17px;padding-bottom:13px;border-bottom:1px solid #203b50}
+.metric{position:relative;background:linear-gradient(145deg,#122a40 0%,#0d2031 100%);border:1px solid #23445d;border-radius:11px;padding:15px;margin-bottom:11px;box-shadow:0 7px 18px #00013;transition:border-color .2s,transform .2s}
+.metric:hover{border-color:#34718c;transform:translateY(-1px)}
+.metric label{display:block;font-size:9px;letter-spacing:1.35px;color:#91aabd}
+.metric strong{display:block;font-size:25px;margin:9px 0 5px;letter-spacing:.2px;font-weight:650}
+.metric small{font-size:9px;color:#59cde5;letter-spacing:.85px}
+.metric .green{color:var(--green)}
+.panel-note{font-size:9px;line-height:1.65;color:#7892a6;margin-top:16px;padding:11px 12px;border-left:2px solid #3c9bb5;background:#0b1d2b;border-radius:0 7px 7px 0}
+.toggle{position:absolute;right:310px;top:50%;transform:translateY(-50%);z-index:6;width:27px;height:58px;border:1px solid #32617a;border-right:0;border-radius:9px 0 0 9px;background:linear-gradient(180deg,#16364d,#0d2335);color:#71def1;cursor:pointer;font-size:20px;box-shadow:-5px 0 18px #0002;transition:right .28s ease,background .2s}
+.toggle:hover{background:#19435a}.toggle.closed{right:0;border-right:1px solid #32617a;border-radius:9px 0 0 9px}
+footer{height:32px;flex:none;background:#081522;border-top:1px solid #20394d;display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:#7892a6;font-size:9px;letter-spacing:1.15px}
+@media(max-width:760px){
+ header{height:58px;padding:0 14px}.header-right{gap:8px;font-size:9px}
+ .panel{position:absolute;right:0;top:0;bottom:0;width:min(78vw,300px);box-shadow:-12px 0 30px #0005}
+ .panel.collapsed{width:0}
+ .toggle{right:min(78vw,300px)}.toggle.closed{right:0}
+ .scene-heading{top:16px;left:15px}.hint{left:15px}
+}
+
+.load-modal{position:absolute;inset:0;z-index:8;display:none;align-items:center;justify-content:center;background:rgba(2,9,16,.62);backdrop-filter:blur(5px);padding:18px}
+.load-modal.show{display:flex}
+.load-card{width:min(450px,94%);background:linear-gradient(145deg,#132d43 0%,#0a1928 78%);border:1px solid #36708a;border-radius:16px;box-shadow:0 24px 80px #000b,0 0 35px #31c9e810;padding:23px;position:relative}
+.load-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #24445b;padding-bottom:15px;margin-bottom:16px}
+.load-kicker{font-size:9px;color:var(--cyan);letter-spacing:1.8px;margin-bottom:7px}
+.load-title{font-size:18px;letter-spacing:.7px}
+.load-close{border:1px solid #31536b;background:#142d42;color:#bdefff;border-radius:8px;width:32px;height:32px;font-size:19px;cursor:pointer}
+.load-state{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:10px;letter-spacing:1px;margin-top:10px}
+.load-state:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
+.load-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.load-stat{background:#0a1b2b;border:1px solid #1c3b53;border-radius:9px;padding:12px}
+.load-stat span{display:block;color:#86a2b8;font-size:9px;letter-spacing:1px}
+.load-stat strong{display:block;font-size:19px;margin-top:8px;color:#eaf5ff}
+.load-control{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:12px;background:#0a1b2b;border:1px solid #24445b;border-radius:10px}.load-control span{font-size:10px;color:#9bb4c7;letter-spacing:.8px}.load-switch{border:1px solid #2b7890;background:#10384a;color:#8feaff;border-radius:8px;padding:10px 18px;font-weight:700;font-size:11px;letter-spacing:1px;cursor:pointer;min-width:104px}.load-switch.off{border-color:#80535a;background:#38232a;color:#ffabb4}.load-foot{font-size:9px;color:#7894aa;line-height:1.55;margin-top:15px}
+.scene-wrap.load-focus #scene3d canvas{cursor:pointer}
+@media(max-width:520px){
+ .load-card{padding:16px;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 28px);overflow:auto}
+ .load-title{font-size:15px}
+ .load-stat{padding:10px}
+ .load-stat strong{font-size:17px}
+ .load-modal{padding:12px}
+}
+
+/* GRIDNEX full application shell */
+body{overflow:hidden}.app{flex-direction:row;background:#07111b}.nav-rail{width:224px;flex:none;background:#091521;border-right:1px solid #1c3548;display:flex;flex-direction:column;padding:20px 13px 14px;z-index:10}.nav-brand{display:flex;align-items:center;gap:11px;padding:0 7px 25px;border-bottom:1px solid #1c3548}.nav-brand b{display:block;font-size:14px;letter-spacing:2px}.nav-brand small{display:block;color:#7892a6;font-size:8px;letter-spacing:1.4px;margin-top:4px}.nav-caption{font-size:9px;letter-spacing:1.7px;color:#617b90;padding:23px 10px 9px}.nav-item{width:100%;border:1px solid transparent;background:transparent;color:#8fa6b8;text-align:left;padding:12px 11px;border-radius:7px;margin:2px 0;font-size:11px;letter-spacing:.25px;cursor:pointer;display:flex;align-items:center;gap:12px}.nav-item span{font-size:16px;width:19px;text-align:center;color:#6f94aa}.nav-item:hover{background:#102438;color:#d9edf7}.nav-item.active{background:linear-gradient(90deg,#12364a,#102536);border-color:#24536a;color:#e8f8ff;box-shadow:inset 2px 0 #42c8e2}.nav-item.active span{color:#51d5ed}.system-caption{padding-top:27px}.nav-bottom{margin-top:auto;border:1px solid #1e3a4e;background:#0c1d2b;border-radius:8px;padding:12px 9px;display:flex;align-items:center;gap:9px}.nav-bottom i,.status-row i{width:7px;height:7px;border-radius:50%;background:#4ed6a3;box-shadow:0 0 9px #4ed6a3;flex:none}.nav-bottom b{font-size:8px;letter-spacing:.8px;display:block}.nav-bottom small{font-size:8px;color:#718da2;display:block;margin-top:4px}.app-main{min-width:0;flex:1;display:flex;flex-direction:column}.app-main>header{height:62px;padding:0 25px;background:#0b1926;border-bottom:1px solid #20394d;box-shadow:none}.crumb{color:#8099ad;font-size:9px;letter-spacing:1.2px;margin-right:10px}.demo-pill,.date-chip{border:1px solid #34546a;background:#102536;color:#9fc2d4;padding:7px 10px;border-radius:5px;font-size:8px;letter-spacing:1.1px}.page-stack{flex:1;min-height:0;overflow:auto;padding:22px 25px 28px;background:radial-gradient(ellipse at 70% 0%,#102438 0%,#091521 52%,#07111b 100%)}.app-page{display:none}.app-page.active{display:block}.page-intro{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}.eyebrow{font-size:9px;letter-spacing:1.9px;color:#50c8df;margin-bottom:7px}.page-intro h2{font-size:23px;letter-spacing:.2px;font-weight:650}.page-intro p{font-size:11px;color:#8099ad;margin-top:6px}.date-chip{white-space:nowrap}.kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:13px}.kpi{background:linear-gradient(145deg,#11283a,#0d1d2b);border:1px solid #244256;border-radius:8px;padding:13px 15px;min-width:0}.kpi small{font-size:8px;letter-spacing:1.1px;color:#86a0b3;display:block}.kpi strong{display:block;font-size:24px;font-weight:650;margin:8px 0 5px}.kpi em{font-style:normal;font-size:10px;color:#91aabd}.kpi span{font-size:8px;letter-spacing:.8px;color:#7d9aae}.kpi .positive,.positive{color:#54d6a5}.overview-body{border:1px solid #244256;border-radius:9px;overflow:hidden;background:#081724}.overview-scene-label{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#0d2030;border-bottom:1px solid #244256}.overview-scene-label b{font-size:9px;letter-spacing:1.3px}.overview-scene-label span{font-size:8px;color:#6f91a7;letter-spacing:1px}.overview-body main{height:min(58vh,570px);min-height:350px;border:0}.overview-body .scene-wrap{background:radial-gradient(ellipse at 48% 44%,#183449 0%,#0c1d2c 47%,#07121e 100%)}.overview-body .panel{width:260px;padding:17px 14px}.overview-body .toggle{right:260px}.overview-body .toggle.closed{right:0}.overview-body .scene-heading{top:15px;left:16px}.overview-body .hint{bottom:12px;left:16px}.overview-lower{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.lower-card,.info-panel,.asset-card{border:1px solid #244256;background:linear-gradient(145deg,#102437,#0b1a28);border-radius:8px;padding:15px}.card-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:13px}.card-head b{font-size:9px;letter-spacing:1.1px}.card-head span{font-size:8px;color:#7592a7;letter-spacing:.7px}.balance-line{display:flex;justify-content:space-between;font-size:10px;color:#90aabd;margin:8px 0}.balance-line b{color:#e2f2fa}.balance-track{height:5px;border-radius:8px;background:#1b3548;overflow:hidden}.balance-track i{display:block;height:100%;background:#43c4df;border-radius:8px}.status-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid #1d3548;color:#a3bac9;font-size:10px}.status-row b{margin-left:auto;color:#55d6a5;font-size:8px;letter-spacing:1px}.secondary-page{max-width:1150px}.info-panel{margin-top:14px}.info-panel h3{font-size:10px;letter-spacing:1.3px;margin-bottom:10px}.info-panel p{font-size:11px;color:#8ba4b7;line-height:1.7}.action-btn{margin-top:15px;border:1px solid #2d7891;background:#103449;color:#9cecff;border-radius:5px;padding:10px 13px;font-size:9px;letter-spacing:1px;cursor:pointer}.asset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.asset-card span{font-size:8px;color:#6e91a7;letter-spacing:1.2px}.asset-card h3{font-size:13px;margin:13px 0 10px}.asset-card strong{font-size:22px;color:#e6f6fc}.asset-card small{display:block;color:#8099ad;font-size:9px;margin-top:7px}.event-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #20394b}.event-row:last-child{border:0}.event-dot{width:8px;height:8px;border-radius:50%;background:#50d7a4;box-shadow:0 0 9px #50d7a4}.event-row b{font-size:11px;display:block}.event-row small{font-size:9px;color:#819bad;display:block;margin-top:5px}.event-row time{margin-left:auto;color:#6f8ca1;font-size:8px}.settings-list>div{display:flex;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid #20394b;font-size:10px}.settings-list>div:last-child{border:0}.settings-list span{color:#8ba4b7;text-align:right}footer{height:28px;background:#08131e;border-top:1px solid #1b3548;padding:0 18px;font-size:8px}.load-modal{z-index:20}
+@media(max-width:900px){.nav-rail{width:190px}.kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-body .panel{width:230px}.overview-body .toggle{right:230px}}
+@media(max-width:650px){.app{display:block}.nav-rail{position:fixed;left:0;right:0;bottom:0;width:auto;height:62px;padding:5px 4px;display:flex;flex-direction:row;align-items:center;justify-content:space-around;border-right:0;border-top:1px solid #244256;background:#091521}.nav-brand,.nav-caption,.nav-bottom{display:none}.nav-item{width:auto;flex:1;justify-content:center;flex-direction:column;gap:3px;padding:6px 1px;margin:0;font-size:7px;border-radius:5px}.nav-item span{font-size:15px}.nav-item[data-page="settings"]{display:flex}.app-main{height:calc(100dvh - 62px)}.app-main>header{height:54px;padding:0 12px}.header-right{gap:7px}.crumb{display:none}.demo-pill{padding:6px;font-size:7px}.page-stack{padding:15px 11px 20px}.page-intro{align-items:flex-start}.page-intro h2{font-size:19px}.page-intro p{font-size:10px;max-width:230px}.date-chip{font-size:7px;padding:6px}.kpi-strip{gap:7px}.kpi{padding:10px}.kpi strong{font-size:20px}.kpi small{font-size:7px}.overview-body main{height:58vh;min-height:330px}.overview-body .panel{width:min(78vw,260px)}.overview-body .toggle{right:min(78vw,260px)}.overview-lower{grid-template-columns:1fr}.asset-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.asset-card{padding:11px}.asset-card h3{font-size:11px}.asset-card strong{font-size:18px}.settings-list>div{flex-direction:column;gap:6px}.settings-list span{text-align:left}.app-main footer{display:none}}
+
+
+/* Functional settings center */
+:root{--accent:#49d5ee;--accent-rgb:73,213,238}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;max-width:1180px}.settings-card{min-width:0;border:1px solid #25465d;background:linear-gradient(145deg,#102538,#0a1926);border-radius:10px;padding:16px;box-shadow:0 8px 24px #0002}.settings-head{display:flex;align-items:center;gap:11px;padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid #203d52}.settings-head>span{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(var(--accent-rgb),.35);background:rgba(var(--accent-rgb),.09);color:var(--accent);border-radius:8px;font-size:19px}.settings-head h3{font-size:12px;letter-spacing:.3px}.settings-head p{font-size:9px;color:#7f9bad;margin-top:4px}.setting-field{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;color:#a9bfce;font-size:10px}.setting-field select,.setting-field input{width:48%;min-width:115px;background:#091a28;color:#e4f4fb;border:1px solid #31536a;border-radius:6px;padding:9px;font:inherit;outline:none}.setting-field select:focus,.setting-field input:focus{border-color:var(--accent)}.setting-check{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;color:#a9bfce;font-size:10px;border-bottom:1px solid #1d3548}.setting-check input{accent-color:var(--accent);width:17px;height:17px}.setting-note{font-size:9px;color:#7793a7;line-height:1.55;margin-top:12px;padding:9px 10px;border-left:2px solid var(--accent);background:#0b1c2a}.priority-list{display:grid;gap:8px}.priority-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #203e52;border-radius:7px;background:#0b1d2b;color:#a9bfce;font-size:10px}.priority-row select{background:#102a3d;color:#dff4fc;border:1px solid #31536a;border-radius:5px;padding:6px}.setting-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.setting-btn{border:1px solid #327c95;background:#10364a;color:#a9edfa;border-radius:6px;padding:9px 11px;font-size:9px;letter-spacing:.3px;cursor:pointer}.setting-btn:hover{filter:brightness(1.18)}.setting-btn.secondary{border-color:#36556b;background:#172b3b;color:#b4c7d3}.setting-btn.danger{border-color:#80535a;background:#38232a;color:#ffb4bc}.security-status{font-size:10px;color:#90aabd;padding:8px 0}.security-status.enabled{color:#55d6a5}.about-card{grid-column:1/-1}.about-row{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #20394b;font-size:10px}.about-row:last-child{border:0}.about-row span{color:#8ba4b7;text-align:right}.settings-feedback{position:sticky;bottom:0;margin-top:12px;color:#70dfb4;font-size:10px;min-height:18px}.toast-alert{position:fixed;right:18px;top:75px;z-index:1000;max-width:min(360px,calc(100vw - 36px));padding:12px 15px;border:1px solid #b8893f;background:#332719;color:#ffe0a0;border-radius:8px;box-shadow:0 12px 30px #0007;font-size:11px}.pin-overlay{position:fixed;inset:0;z-index:2000;background:rgba(2,8,14,.96);display:none;align-items:center;justify-content:center;padding:20px}.pin-overlay.show{display:flex}.pin-box{width:min(360px,100%);background:#102538;border:1px solid #34738b;border-radius:13px;padding:24px;text-align:center;box-shadow:0 25px 80px #000b}.pin-box h2{font-size:18px;letter-spacing:2px;margin-bottom:8px}.pin-box p{font-size:10px;color:#8ca9bc;margin-bottom:16px}.pin-box input{width:100%;background:#071724;color:white;border:1px solid #3b6177;border-radius:7px;padding:12px;text-align:center;font-size:20px;letter-spacing:8px}.pin-box button{margin-top:12px;width:100%;padding:11px;border:1px solid #3d9bb5;background:#103e53;color:#c4f5ff;border-radius:7px;cursor:pointer}.light-theme{--bg:#edf3f7;--panel:#fff;--panel2:#e2edf3;--line:#c7d6df;--white:#182d3b;--muted:#607989;color:#182d3b;background:#edf3f7}.light-theme .nav-rail,.light-theme .app-main>header,.light-theme footer{background:#e3edf3;color:#1c3544;border-color:#c1d1db}.light-theme .nav-item{color:#466273}.light-theme .nav-item.active{background:#d2e8f0;color:#123747}.light-theme .page-stack{background:linear-gradient(145deg,#f4f8fa,#e8f0f4)}.light-theme .settings-card,.light-theme .kpi,.light-theme .lower-card,.light-theme .info-panel,.light-theme .asset-card{background:#fff;border-color:#c5d5df;color:#193747}.light-theme .settings-head h3,.light-theme .about-row b{color:#193747}.light-theme .setting-field,.light-theme .setting-check,.light-theme .priority-row{color:#3d596a}.light-theme .setting-field select,.light-theme .setting-field input,.light-theme .priority-row select{background:#f4f8fa;color:#183746;border-color:#b9ccd7}.light-theme .setting-note{background:#e8f2f6;color:#526e7d}.light-theme .about-row span{color:#587384}.light-theme .scene-wrap,.light-theme .overview-body{filter:brightness(1.04)}
+@media(max-width:850px){.settings-grid{grid-template-columns:1fr}.about-card{grid-column:auto}.about-row{flex-direction:column;gap:5px}.about-row span{text-align:left}}
+
+
+/* Dedicated full-size 3D workspace */
+.overview-3d-launch{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 20px;border:1px solid #28516a;border-radius:10px;background:linear-gradient(115deg,#102b40,#0b1b29);min-height:145px}
+.overview-3d-launch h3{font-size:17px;margin:4px 0 8px;color:#e8f7fd}
+.overview-3d-launch p{font-size:11px;color:#8da9bc;line-height:1.65;max-width:620px}
+.app-page.digital-workspace.active{display:flex;max-width:none!important;height:100%;min-height:0;flex-direction:column}
+.digital-intro{flex:none;margin-bottom:12px}
+.digital-viewer{flex:1;min-height:470px;border:1px solid #28516a;border-radius:10px;overflow:hidden;background:#081724;display:flex;flex-direction:column;position:relative}
+.digital-viewer>main{flex:1;min-height:0;height:auto;border:0}
+.digital-viewer .scene-wrap{min-height:0}
+.digital-viewer .panel{width:275px;padding:17px 14px}
+.digital-viewer .toggle{right:275px}
+.digital-viewer .toggle.closed{right:0}
+.digital-viewer .scene-heading{top:15px;left:16px}
+.digital-viewer .hint{bottom:12px;left:16px}
+@media(max-width:900px){.digital-viewer .panel{width:235px}.digital-viewer .toggle{right:235px}}
+@media(max-width:760px){
+ .overview-3d-launch{align-items:flex-start;flex-direction:column;padding:17px}
+ .digital-workspace{height:auto;min-height:0}
+ .digital-viewer{height:calc(100dvh - 205px);min-height:390px;flex:none}
+ .digital-viewer .panel{position:absolute;right:0;top:0;bottom:0;width:min(78vw,280px)}
+ .digital-viewer .panel.collapsed{width:0}
+ .digital-viewer .toggle{right:min(78vw,280px)}
+ .digital-viewer .toggle.closed{right:0}
+ .digital-viewer .scene-heading{top:12px;left:12px}
+ .digital-viewer .hint{left:12px;bottom:10px;font-size:8px;max-width:85%}
+}
+
+
+/* Compact, optional model guide: hidden by default so the 3D scene stays clear */
+.scene-guide-toggle{position:absolute;z-index:5;top:16px;right:16px;border:1px solid #34718b;border-radius:9px;padding:9px 12px;background:rgba(7,25,39,.92);color:#bdefff;font-size:10px;font-weight:700;letter-spacing:.35px;cursor:pointer;box-shadow:0 7px 20px #0005;backdrop-filter:blur(8px)}
+.scene-guide-toggle:hover{background:#12364a;border-color:#55cde5}
+.scene-guide{position:absolute;z-index:4;top:62px;right:16px;width:224px;padding:14px;border:1px solid #31556c;border-radius:12px;background:rgba(5,17,29,.96);backdrop-filter:blur(12px);box-shadow:0 14px 34px #0008;display:none;pointer-events:auto}
+.scene-guide.open{display:block}
+.scene-guide h4{font-size:10px;letter-spacing:1px;color:#dff7ff;margin-bottom:10px}
+.scene-guide .guide-row{display:flex;align-items:center;gap:9px;margin:8px 0;color:#a9c1d1;font-size:10px;line-height:1.3}
+.guide-dot{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:0 0 10px currentColor}
+.guide-flow{margin-top:11px;padding-top:10px;border-top:1px solid #284459;color:#8eabba;font-size:9px;line-height:1.7}
+.guide-flow b{color:#62d9ed}
+.scene-step{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-right:5px;border-radius:50%;background:#12364a;border:1px solid #32718b;color:#c5f5ff;font-size:9px}
+@media(max-width:760px){.scene-guide-toggle{top:12px;right:12px;padding:8px 10px;font-size:9px}.scene-guide{top:54px;right:10px;width:min(224px,calc(100% - 20px));padding:11px}.scene-guide h4{font-size:9px;margin-bottom:7px}.scene-guide .guide-row{font-size:9px;margin:6px 0}.scene-guide .guide-flow{font-size:8px;margin-top:8px;padding-top:7px}}
+
+@media(max-width:650px){.brand:after{top:38px;left:67px;font-size:6px;letter-spacing:1.5px}.brand h1{font-size:18px;letter-spacing:3px}.brand .logo{width:36px;height:36px}.brand .logo svg{width:27px;height:27px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="nav-rail" id="navRail">
+  <div class="nav-brand"><div class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="gx" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#42d9f2"/><stop offset="1" stop-color="#63e99d"/></linearGradient></defs><path d="M48 14A24 24 0 1 0 52 42" fill="none" stroke="url(#gx)" stroke-width="5" stroke-linecap="round"/><path d="M34 8 19 34h12l-2 22 18-30H34l4-18Z" fill="url(#gx)" stroke="#d8fff4" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 43h12M44 49h8" stroke="#55d9ef" stroke-width="2" stroke-linecap="round"/></svg></div><div><b>GRIDNEX</b><small>CONTROL SYSTEM</small></div></div>
+  <div class="nav-caption">WORKSPACE</div>
+  <button class="nav-item active" data-page="overview"><span>▦</span> Overview</button>
+  <button class="nav-item" data-page="digital"><span>◈</span> Digital Twin</button>
+  <button class="nav-item" data-page="assets"><span>▤</span> Assets & Loads</button>
+  <button class="nav-item" data-page="analytics"><span>▥</span> Analytics</button>
+  <button class="nav-item" data-page="alarms"><span>⚑</span> Alarms & Events</button>
+  <div class="nav-caption system-caption">SYSTEM</div>
+  <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
+  <div class="nav-bottom"><i></i><div><b>DEMO ENVIRONMENT</b><small>Local simulation interface</small></div></div>
+</aside>
+<div class="app-main">
+<header>
+  <div class="brand"><div class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="gx" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#42d9f2"/><stop offset="1" stop-color="#63e99d"/></linearGradient></defs><path d="M48 14A24 24 0 1 0 52 42" fill="none" stroke="url(#gx)" stroke-width="5" stroke-linecap="round"/><path d="M34 8 19 34h12l-2 22 18-30H34l4-18Z" fill="url(#gx)" stroke="#d8fff4" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 43h12M44 49h8" stroke="#55d9ef" stroke-width="2" stroke-linecap="round"/></svg></div><h1>GRID<span>NEX</span></h1></div>
+  <div class="header-right"><span class="crumb" id="pageCrumb">OPERATIONS / OVERVIEW</span><span class="online"><i></i>SYSTEM READY</span><span class="demo-pill">DEMO MODE</span></div>
+</header>
+<div class="page-stack">
+<section class="app-page active" id="page-overview">
+<div class="page-intro"><div><div class="eyebrow">MICROGRID OPERATIONS CENTER</div><h2>System Overview</h2><p>Monitor generation, consumption and network performance.</p></div><div class="date-chip">● &nbsp; SIMULATION ACTIVE</div></div>
+<div class="kpi-strip"><div class="kpi"><small>INSTALLED GENERATION</small><strong>850 <em>kW</em></strong><span class="positive">▲ PV SOURCE</span></div><div class="kpi"><small>ACTIVE CONSUMPTION</small><strong id="kpiLoad">620 <em>kW</em></strong><span>CONNECTED LOADS</span></div><div class="kpi"><small>BATTERY CHARGE</small><strong>86<em>%</em></strong><span class="positive">● STORAGE AVAILABLE</span></div><div class="kpi"><small>GRID FREQUENCY</small><strong>50.0 <em>Hz</em></strong><span class="positive">● NOMINAL</span></div></div>
+<div class="overview-body"><div class="overview-scene-label"><b>NETWORK DIGITAL TWIN</b><span>INTERACTIVE 3D VIEW</span></div>
+<div class="overview-3d-launch">
+  <div><span class="eyebrow">INTERACTIVE DIGITAL TWIN</span><h3>Explore the complete 3D microgrid</h3><p>The 3D network now has its own dedicated workspace with a larger viewing area and separate energy monitor.</p></div>
+  <button class="action-btn" data-goto="digital">OPEN 3D WORKSPACE&nbsp; ↗</button>
+</div>
+<div class="overview-lower"><div class="lower-card"><div class="card-head"><b>POWER BALANCE</b><span>LIVE DEMO VALUES</span></div><div class="balance-line"><span>Generation</span><b>850 kW</b></div><div class="balance-track"><i style="width:100%"></i></div><div class="balance-line"><span>Consumption</span><b id="lowerLoad">620 kW</b></div><div class="balance-track"><i id="loadBar" style="width:73%"></i></div></div><div class="lower-card"><div class="card-head"><b>NETWORK STATUS</b><span class="positive">ALL SYSTEMS NORMAL</span></div><div class="status-row"><i></i> PV array <b>ONLINE</b></div><div class="status-row"><i></i> Battery storage <b>ONLINE</b></div><div class="status-row"><i></i> Inverter <b>ONLINE</b></div></div></div>
+</section>
+<section class="app-page digital-workspace" id="page-digital">
+<div class="page-intro digital-intro"><div><div class="eyebrow">REAL-TIME VISUALIZATION</div><h2>Digital Twin · 3D Workspace</h2><p>Explore, rotate and control every connected load in the dedicated microgrid model.</p></div><span class="date-chip">INTERACTIVE 3D MODEL</span></div>
+<div class="digital-viewer">
+<div class="overview-scene-label"><b>GRIDNEX · SMART MICROGRID MODEL</b><span>DRAG TO ORBIT · SCROLL TO ZOOM</span></div>
+<main>
+  <section class="scene-wrap">
+    <div class="scene-heading"><h2>SMART MICROGRID</h2><p>3D ENERGY NETWORK · SYSTEM OVERVIEW</p></div>
+    <div id="scene3d"></div>
+    <button class="scene-guide-toggle" id="sceneGuideToggle" type="button" aria-expanded="false">ⓘ &nbsp; Model guide</button>
+    <div class="scene-guide" id="sceneGuide" aria-hidden="true">
+      <h4>HOW TO READ THIS MODEL</h4>
+      <div class="guide-row"><i class="guide-dot" style="color:#39c9f2;background:#39c9f2"></i><span>Solar panels · electricity generation</span></div>
+      <div class="guide-row"><i class="guide-dot" style="color:#48e2b2;background:#48e2b2"></i><span>Battery · energy storage</span></div>
+      <div class="guide-row"><i class="guide-dot" style="color:#d8e6ef;background:#d8e6ef"></i><span>Inverter · DC / AC conversion</span></div>
+      <div class="guide-row"><i class="guide-dot" style="color:#e5b94d;background:#e5b94d"></i><span>Transformer · voltage adjustment</span></div>
+      <div class="guide-row"><i class="guide-dot" style="color:#428fbd;background:#428fbd"></i><span>Buildings · electricity consumers</span></div>
+      <div class="guide-flow"><b>ENERGY PATH</b><br><span class="scene-step">1</span>Generate <span class="scene-step">2</span>Convert<br><span class="scene-step">3</span>Distribute <span class="scene-step">4</span>Consume<br>Battery stores surplus energy.</div>
+    </div>
+    <div class="hint">DRAG TO ORBIT&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A LOAD FOR DETAILS&nbsp;&nbsp;·&nbsp;&nbsp;DOUBLE-CLICK TO RESET</div>
+    <div class="load-modal" id="loadModal" role="dialog" aria-modal="true" aria-labelledby="loadTitle">
+      <div class="load-card">
+        <div class="load-top">
+          <div>
+            <div class="load-kicker">MICROGRID LOAD DETAILS</div>
+            <h3 class="load-title" id="loadTitle">LOAD</h3>
+            <div class="load-state" id="loadStatus">ONLINE</div>
+          </div>
+          <button class="load-close" id="loadClose" aria-label="Close details">×</button>
+        </div>
+        <div class="load-grid">
+          <div class="load-stat"><span>ACTIVE POWER</span><strong id="loadPower">—</strong></div>
+          <div class="load-stat"><span>ENERGY TODAY</span><strong id="loadEnergy">—</strong></div>
+          <div class="load-stat"><span>VOLTAGE</span><strong id="loadVoltage">—</strong></div>
+          <div class="load-stat"><span>POWER FACTOR</span><strong id="loadPF">—</strong></div>
+          <div class="load-stat"><span>FREQUENCY</span><strong id="loadFrequency">—</strong></div>
+          <div class="load-stat"><span>LOAD LEVEL</span><strong id="loadLevel">—</strong></div>
+        </div>
+        <div class="load-control"><span>LOAD CONTROL</span><button class="load-switch" id="loadSwitch" type="button">TURN OFF</button></div>
+        <p class="load-foot">Illustrative demonstration readings. Connect real meters or sensors to display live measurements.</p>
+      </div>
+    </div>
+  </section>
+  <aside class="panel" id="panel">
+    <h3>ENERGY MONITORING</h3>
+    <div class="metric"><label>SOLAR GENERATION</label><strong>850 <span style="font-size:12px;color:#8ba7bc">kW</span></strong><small>PHOTOVOLTAIC SOURCE</small></div>
+    <div class="metric"><label>TOTAL LOAD</label><strong><span id="totalLoadValue">620</span> <span style="font-size:12px;color:#8ba7bc">kW</span></strong><small>CONNECTED CONSUMPTION</small></div>
+    <div class="metric"><label>BATTERY STATE OF CHARGE</label><strong>86<span style="font-size:12px;color:#8ba7bc">%</span></strong><small>ENERGY STORAGE</small></div>
+    <div class="metric"><label>GRID CONDITION</label><strong class="green">STABLE</strong><small>NETWORK STATUS</small></div>
+    <div class="metric"><label>POWER BALANCE</label><strong><span id="balanceValue">+230</span> <span style="font-size:12px;color:#8ba7bc">kW</span></strong><small>GENERATION − LOAD · DEMO</small></div>
+    <p class="panel-note">Illustrative interface values. No live sensors or electrical simulation are connected yet.</p>
+  </aside>
+  <button class="toggle" id="toggle" aria-label="Toggle monitoring panel">›</button>
+</main>
+</div>
+</section>
+<section class="app-page secondary-page" id="page-assets"><div class="page-intro"><div><div class="eyebrow">FIELD EQUIPMENT</div><h2>Assets & Loads</h2><p>Equipment inventory and controllable consumption points.</p></div><span class="date-chip">4 LOAD GROUPS</span></div><div class="asset-grid"><article class="asset-card"><span>01 / SOURCE</span><h3>Solar PV Array</h3><strong>850 kW</strong><small>Photovoltaic generation · DEMO</small></article><article class="asset-card"><span>02 / STORAGE</span><h3>Battery Bank</h3><strong>86%</strong><small>State of charge · DEMO</small></article><article class="asset-card"><span>03 / CONVERSION</span><h3>Power Inverter</h3><strong>ONLINE</strong><small>DC / AC conversion · DEMO</small></article><article class="asset-card"><span>04 / DISTRIBUTION</span><h3>Distribution Hub</h3><strong>STABLE</strong><small>Microgrid bus · DEMO</small></article></div><div class="info-panel"><h3>LOAD CONTROL</h3><p>Select a building or load directly in the 3D Digital Twin to inspect its parameters and switch it on or off.</p><button class="action-btn" data-goto="overview">MANAGE LOADS IN 3D VIEW</button></div></section>
+<section class="app-page secondary-page" id="page-analytics"><div class="page-intro"><div><div class="eyebrow">PERFORMANCE MONITORING</div><h2>Analytics</h2><p>Key indicators for the current demonstration scenario.</p></div><span class="date-chip">SAMPLE DATA</span></div><div class="asset-grid"><article class="asset-card"><span>ENERGY GENERATED</span><h3>Daily PV Output</h3><strong>5.8 MWh</strong><small>Illustrative sample</small></article><article class="asset-card"><span>ENERGY CONSUMED</span><h3>Daily Load</h3><strong>4.2 MWh</strong><small>Illustrative sample</small></article><article class="asset-card"><span>SELF-CONSUMPTION</span><h3>PV Utilization</h3><strong>73%</strong><small>Illustrative sample</small></article><article class="asset-card"><span>POWER QUALITY</span><h3>Frequency</h3><strong>50.0 Hz</strong><small>Nominal reference</small></article></div><div class="info-panel"><h3>DATA NOTE</h3><p>These are demonstration values, not readings from physical meters. Historical charts will become meaningful when measurement data is connected.</p></div></section>
+<section class="app-page secondary-page" id="page-alarms"><div class="page-intro"><div><div class="eyebrow">EVENT MANAGEMENT</div><h2>Alarms & Events</h2><p>System messages and operational notifications.</p></div><span class="date-chip positive">NO ACTIVE ALARMS</span></div><div class="info-panel"><div class="event-row"><span class="event-dot"></span><div><b>System initialized</b><small>Simulation environment ready · Informational</small></div><time>NOW</time></div><div class="event-row"><span class="event-dot"></span><div><b>Microgrid status normal</b><small>No active faults reported · Informational</small></div><time>NOW</time></div></div></section>
+<section class="app-page secondary-page" id="page-settings">
+<div class="page-intro"><div><div class="eyebrow">SYSTEM CONFIGURATION</div><h2 data-i18n="settingsTitle">Settings</h2><p data-i18n="settingsDesc">Customize GRIDNEX and manage local simulation preferences.</p></div><span class="date-chip">GRIDNEX · v2.1</span></div>
+<div class="settings-grid">
+ <article class="settings-card"><div class="settings-head"><span>◐</span><div><h3 data-i18n="appearance">Appearance & Language</h3><p>Personalize your workspace</p></div></div>
+  <label class="setting-field"><span data-i18n="language">Application language</span><select id="prefLanguage"><option value="en">English</option><option value="ar">العربية</option><option value="fr">Français</option></select></label>
+  <label class="setting-field"><span data-i18n="theme">Display theme</span><select id="prefTheme"><option value="dark">Dark industrial</option><option value="light">Light</option></select></label>
+  <label class="setting-field"><span data-i18n="accent">Interface accent</span><select id="prefAccent"><option value="cyan">Electric cyan</option><option value="blue">Signal blue</option><option value="green">Safety green</option><option value="amber">Warning amber</option></select></label>
+ </article>
+ <article class="settings-card"><div class="settings-head"><span>♧</span><div><h3 data-i18n="notifications">Notifications & Alarms</h3><p>Configure local alerts</p></div></div>
+  <label class="setting-check"><span data-i18n="enableAlerts">Enable in-app alerts</span><input type="checkbox" id="prefAlerts" checked></label>
+  <label class="setting-check"><span data-i18n="loadAlert">Alert when load limit is exceeded</span><input type="checkbox" id="prefLoadAlert" checked></label>
+  <label class="setting-check"><span data-i18n="batteryAlert">Low battery warning</span><input type="checkbox" id="prefBatteryAlert" checked></label>
+  <label class="setting-field"><span data-i18n="batteryThreshold">Low battery threshold (%)</span><input id="prefBatteryThreshold" type="number" min="1" max="100" value="20"></label>
+ </article>
+ <article class="settings-card"><div class="settings-head"><span>ϟ</span><div><h3 data-i18n="energyControl">Energy Control</h3><p>Simulation operating limits</p></div></div>
+  <label class="setting-field"><span data-i18n="maxLoad">Maximum total load (kW)</span><input id="prefMaxLoad" type="number" min="1" max="10000" value="700"></label>
+  <label class="setting-field"><span data-i18n="batteryLevel">Battery charge level (%) · demo</span><input id="prefBatteryLevel" type="number" min="0" max="100" value="86"></label>
+  <div class="setting-note">Battery charge is a demonstration value; no physical battery controller is connected.</div>
+ </article>
+ <article class="settings-card"><div class="settings-head"><span>⇅</span><div><h3 data-i18n="loadPriority">Load Priority</h3><p>Set operational importance (1 = highest)</p></div></div>
+  <div id="priorityList" class="priority-list"></div>
+ </article>
+ <article class="settings-card"><div class="settings-head"><span>▣</span><div><h3 data-i18n="security">Security & App Lock</h3><p>Local interface access control</p></div></div>
+  <div class="security-status" id="pinStatus">PIN lock is not enabled</div>
+  <div class="setting-actions"><button class="setting-btn" id="setPinBtn">Set / Change PIN</button><button class="setting-btn secondary" id="lockNowBtn">Lock now</button><button class="setting-btn danger" id="removePinBtn">Remove PIN</button></div>
+  <div class="setting-note">PIN lock is a convenience lock for this browser interface, not enterprise-grade authentication or encryption.</div>
+ </article>
+ <article class="settings-card"><div class="settings-head"><span>⇧</span><div><h3 data-i18n="dataTools">Data & Storage</h3><p>Export reports and manage preferences</p></div></div>
+  <div class="setting-actions"><button class="setting-btn" id="exportCsvBtn">Export report CSV</button><button class="setting-btn" id="backupBtn">Download settings backup</button><button class="setting-btn secondary" id="restoreBtn">Restore backup</button><input type="file" id="restoreFile" accept="application/json,.json" hidden></div>
+  <button class="setting-btn danger" id="resetSettingsBtn">Restore default settings</button>
+  <div class="setting-note">Exports and backups are generated locally in your browser.</div>
+ </article>
+ <article class="settings-card about-card"><div class="settings-head"><span>ⓘ</span><div><h3 data-i18n="about">About GRIDNEX</h3><p>Application information</p></div></div>
+  <div class="about-row"><b>GRIDNEX</b><span>Smart Microgrid · Industrial SCADA</span></div><div class="about-row"><b>Version</b><span>2.1 · Full Application</span></div><div class="about-row"><b>Platform</b><span>Browser-based HTML application</span></div><div class="about-row"><b>Operating mode</b><span>Local demonstration simulation</span></div><div class="about-row"><b>Data source</b><span>Illustrative values · No live sensors</span></div>
+ </article>
+</div><div class="settings-feedback" id="settingsFeedback" role="status" aria-live="polite"></div>
+</section>
+</div>
+<footer><span>GRIDNEX INDUSTRIAL SCADA</span><span>SMART MICROGRID MANAGEMENT · DEMO ENVIRONMENT</span></footer>
+</div>
+
+<div class="pin-overlay" id="pinOverlay"><div class="pin-box"><div class="logo" style="margin:0 auto 14px">G</div><h2>GRIDNEX LOCKED</h2><p>Enter your local application PIN to continue.</p><input id="unlockPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="••••"><button id="unlockBtn">UNLOCK APPLICATION</button><p id="pinError" style="color:#ff9ba7;margin:10px 0 0"></p></div></div>
+<div id="toastHost"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+
+// Full application navigation
+const navButtons=[...document.querySelectorAll('.nav-item')];
+const pageNames={overview:'OPERATIONS / OVERVIEW',digital:'OPERATIONS / DIGITAL TWIN',assets:'ASSETS / LOADS',analytics:'REPORTS / ANALYTICS',alarms:'SYSTEM / ALARMS & EVENTS',settings:'SYSTEM / SETTINGS'};
+function openPage(name){document.querySelectorAll('.app-page').forEach(p=>p.classList.toggle('active',p.id==='page-'+name));navButtons.forEach(b=>b.classList.toggle('active',b.dataset.page===name));document.getElementById('pageCrumb').textContent=pageNames[name]||'GRIDNEX';if(name==='overview'||name==='digital')setTimeout(()=>window.dispatchEvent(new Event('resize')),120);}
+navButtons.forEach(b=>b.addEventListener('click',()=>openPage(b.dataset.page)));
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>openPage(b.dataset.goto)));
+
+(() => {
+'use strict';
+const guideToggle=document.getElementById('sceneGuideToggle');
+const guidePanel=document.getElementById('sceneGuide');
+guideToggle.addEventListener('click',()=>{
+ const isOpen=guidePanel.classList.toggle('open');
+ guideToggle.setAttribute('aria-expanded',String(isOpen));
+ guidePanel.setAttribute('aria-hidden',String(!isOpen));
+ guideToggle.textContent=isOpen?'×  Close guide':'ⓘ  Model guide';
+});
+
+const host=document.getElementById('scene3d');
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0x081522,42,95);
+const camera=new THREE.PerspectiveCamera(42,1,.1,180);
+const initialCamera=new THREE.Vector3(27,24,32);
+const target=new THREE.Vector3(0,1.1,0);
+camera.position.copy(initialCamera);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));
+renderer.setSize(host.clientWidth,host.clientHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.08;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.target.copy(target);controls.enableDamping=true;controls.dampingFactor=.055;
+controls.minDistance=15;controls.maxDistance=62;controls.maxPolarAngle=Math.PI*.48;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xa8d8ff,0x172536,1.35));
+const key=new THREE.DirectionalLight(0xffffff,1.55);key.position.set(15,28,18);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-28;key.shadow.camera.right=28;key.shadow.camera.top=28;key.shadow.camera.bottom=-28;scene.add(key);
+const fill=new THREE.DirectionalLight(0x3c9fff,.55);fill.position.set(-20,12,-15);scene.add(fill);
+const cyanLight=new THREE.PointLight(0x20bfe8,1.1,32);cyanLight.position.set(0,4,0);scene.add(cyanLight);
+
+const mat=(color,metalness=0,roughness=.55,emissive=0x000000,ei=0)=>new THREE.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:ei});
+const M={
+ floor:mat(0x0a1b2a,0,.88), platform:mat(0x132b3e,.45,.55),
+ dark:mat(0x172b3d,.55,.4), steel:mat(0x70899b,.7,.32),
+ white:mat(0xc6d5df,.25,.42), cyan:mat(0x28c8e8,.35,.28,0x087b9c,.45),
+ blue:mat(0x1765a1,.45,.3), solar:mat(0x103c65,.55,.24,0x061b36,.2),
+ glass:mat(0x4b9fba,.4,.22), green:mat(0x36d99a,.25,.3,0x0b8e61,.5),
+ yellow:mat(0xe5b94d,.35,.4), concrete:mat(0x526575,.15,.8),
+ red:mat(0xc85b56,.25,.45), black:mat(0x09121b,.2,.55)
+};
+const root=new THREE.Group();scene.add(root);
+function box(parent,x,y,z,w,h,d,material,cast=true){
+ const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);o.castShadow=cast;o.receiveShadow=true;parent.add(o);return o;
+}
+function cylinder(parent,x,y,z,r1,r2,h,material,segments=16){
+ const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;
+}
+function sphere(parent,x,y,z,r,material){
+ const o=new THREE.Mesh(new THREE.SphereGeometry(r,14,10),material);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o;
+}
+function line(points,color=0x2b7895,r=.055){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(16,points.length*8),r,7,false),mat(color,.35,.35,color,.18));
+ root.add(mesh);return mesh;
+}
+function label(text,x,y,z,color='#bdefff'){
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='rgba(5,17,29,.82)';ctx.strokeStyle='rgba(49,201,232,.55)';ctx.lineWidth=3;
+ const rr=12;ctx.beginPath();ctx.roundRect(5,5,502,86,rr);ctx.fill();ctx.stroke();
+ ctx.font='bold 30px Arial';ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,49);
+ const tex=new THREE.CanvasTexture(canvas);tex.encoding=THREE.sRGBEncoding;
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+ sprite.position.set(x,y,z);sprite.scale.set(5.4,1.02,1);root.add(sprite);return sprite;
+}
+function platform(x,z,w,d){
+ box(root,x,.12,z,w,.24,d,M.platform);
+ const edge=box(root,x,.255,z,w,.035,d,M.cyan,false);edge.material=mat(0x1e718b,.3,.4,0x0c4053,.3);
+}
+
+// Base / engineering site
+box(root,0,-.23,0,40,.35,31,M.floor,false);
+const grid=new THREE.GridHelper(60,60,0x23536a,0x173348);grid.position.y=-.045;root.add(grid);
+platform(0,0,37,28);
+// road markings around equipment
+for(let i=-16;i<=16;i+=4){box(root,i,.012,-13.65,1.7,.018,.08,M.yellow,false);box(root,i,.012,13.65,1.7,.018,.08,M.yellow,false);}
+
+// Solar PV array: left-rear, multiple tilted framed panels
+const solarGroup=new THREE.Group();solarGroup.position.set(-12,0,-7);root.add(solarGroup);
+for(let row=0;row<2;row++){
+ for(let col=0;col<3;col++){
+  const x=(col-1)*2.65,z=(row-.5)*2.55;
+  const frame=new THREE.Group();frame.position.set(x,1.05,z);frame.rotation.x=-.28;solarGroup.add(frame);
+  box(frame,0,0,0,2.35,.12,2.05,M.dark);
+  box(frame,0,.075,0,2.19,.035,1.88,M.solar,false);
+  for(let a=-1;a<=1;a++)box(frame,a*.72,.097,0,.025,.012,1.85,M.cyan,false);
+  for(let b=-1;b<=1;b++)box(frame,0,.098,b*.62,2.16,.012,.025,M.cyan,false);
+  cylinder(solarGroup,x-.8,.52,z-.65,.055,.055,1.05,M.steel,8);
+  cylinder(solarGroup,x+.8,.52,z+.65,.055,.055,1.05,M.steel,8);
+ }
+}
+label('SOLAR PV ARRAY',-12,4.0,-7,'#66dfff');
+
+// Battery storage enclosure with doors, vents and status strip
+const battery=new THREE.Group();battery.position.set(-11,0,3.6);root.add(battery);
+box(battery,0,1.35,0,5.2,2.7,3.5,M.dark);
+box(battery,0,2.76,0,5.28,.12,3.58,M.steel);
+for(let i=0;i<4;i++){
+ const x=-1.92+i*1.28;
+ box(battery,x,1.35,1.77,1.05,2.25,.08,M.white);
+ box(battery,x,2.32,1.825,.72,.06,.025,M.steel,false);
+ box(battery,x-.35,1.28,1.83,.035,.7,.025,M.dark,false);
+}
+for(let i=0;i<8;i++)box(battery,-2.35+i*.67,.65,-1.79,.35,.65,.06,M.black,false);
+box(battery,0,2.35,-1.81,2.5,.08,.05,M.green,false);
+label('BATTERY STORAGE',-11,4.2,3.6,'#75e6b5');
+
+// Inverter cabinet
+const inverter=new THREE.Group();inverter.position.set(-3.8,0,1.5);root.add(inverter);
+box(inverter,0,1.35,0,2.6,2.7,2.2,M.white);
+box(inverter,0,2.74,0,2.7,.12,2.3,M.steel);
+box(inverter,0,1.55,1.12,1.85,1.75,.055,M.dark,false);
+for(let i=0;i<8;i++)box(inverter,-.72+i*.205,1.35,1.16,.045,1.15,.035,M.cyan,false);
+box(inverter,0,2.48,1.17,1.25,.045,.035,M.steel,false);
+box(inverter,-.72,.52,1.17,.62,.08,.035,M.steel,false);
+sphere(inverter,.72,2.15,1.17,.09,M.green);
+box(inverter,0,.15,0,2.9,.3,2.5,M.dark);
+label('POWER INVERTER',-3.8,3.65,1.5);
+
+// Central microgrid control hub
+const hub=new THREE.Group();hub.position.set(2,0,0);root.add(hub);
+cylinder(hub,0,.18,0,3.0,3.0,.35,M.dark,48);
+cylinder(hub,0,.39,0,2.65,2.65,.12,M.cyan,48);
+cylinder(hub,0,.48,0,2.35,2.35,.12,M.platform,48);
+cylinder(hub,0,.58,0,1.35,1.35,.16,M.dark,32);
+cylinder(hub,0,1.35,0,.92,.92,1.35,M.steel,24);
+cylinder(hub,0,2.1,0,1.08,1.08,.18,M.cyan,32);
+cylinder(hub,0,2.2,0,.72,.72,.12,M.dark,32);
+for(let i=0;i<8;i++){
+ const a=i*Math.PI/4;
+ const p=sphere(hub,Math.cos(a)*1.65,.63,Math.sin(a)*1.65,.11,M.green);
+}
+label('MICROGRID CONTROL',2,4.0,0);
+
+// Transformer with tank, radiators and bushings
+const transformer=new THREE.Group();transformer.position.set(10,0,-6);root.add(transformer);
+box(transformer,0,1.55,0,4.4,3.1,3.5,M.yellow);
+box(transformer,0,3.15,0,4.55,.18,3.65,M.steel);
+box(transformer,0,.12,0,4.8,.24,3.9,M.dark);
+for(let side of [-1,1]){
+ for(let i=0;i<9;i++){
+  const z=-1.35+i*.34;
+  box(transformer,side*2.28,1.55,z,.25,2.35,.16,M.steel);
+ }
+}
+for(let i=0;i<3;i++){
+ const x=-1.15+i*1.15;
+ cylinder(transformer,x,3.55,-.55,.22,.22,.62,M.white,12);
+ cylinder(transformer,x,3.95,-.55,.11,.16,.25,M.cyan,12);
+}
+box(transformer,0,2.3,1.79,1.35,.48,.08,M.dark,false);
+box(transformer,0,2.3,1.84,1.12,.035,.025,M.yellow,false);
+for(let i=0;i<5;i++)box(transformer,-1.65+i*.82,.48,1.98,.42,.045,.035,M.steel,false);
+label('STEP-UP TRANSFORMER',10,4.65,-6,'#ffe09a');
+
+// Four distributed load sites with distinctive building profiles
+function buildingLoad(name,x,z,type,color){
+ const g=new THREE.Group();g.position.set(x,0,z);root.add(g);
+ const loadProfiles = {
+  'RESIDENTIAL LOAD': {power:'145 kW',energy:'1,180 kWh',voltage:'400 V',pf:'0.96',frequency:'50 Hz',level:'72%'},
+  'INDUSTRIAL LOAD': {power:'280 kW',energy:'2,460 kWh',voltage:'400 V',pf:'0.93',frequency:'50 Hz',level:'84%'},
+  'COMMERCIAL LOAD': {power:'110 kW',energy:'920 kWh',voltage:'400 V',pf:'0.98',frequency:'50 Hz',level:'61%'},
+  'HOSPITAL LOAD': {power:'85 kW',energy:'760 kWh',voltage:'400 V',pf:'0.99',frequency:'50 Hz',level:'48%'}
+ };
+ g.userData.loadInfo={name, ...loadProfiles[name], status:'ONLINE', isOn:true, nominalPower:parseFloat(loadProfiles[name].power)};
+ g.userData.loadInfo.root=g;
+ g.userData.isLoad=true;
+ platform(x,z,5.3,4.7);
+ const loadHalo=new THREE.Mesh(new THREE.RingGeometry(2.18,2.27,48),new THREE.MeshBasicMaterial({color:0x2aaacb,transparent:true,opacity:.58,side:THREE.DoubleSide}));
+ loadHalo.rotation.x=-Math.PI/2;loadHalo.position.set(x,.275,z);root.add(loadHalo);g.userData.loadHalo=loadHalo;
+ if(type==='residential'){
+  box(g,0,1.25,0,3.3,2.5,2.9,mat(color,.1,.7));
+  // roof and windows
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(2.35,.95,4),mat(0x526b80,.15,.7));roof.position.set(0,2.95,0);roof.rotation.y=Math.PI/4;g.add(roof);
+  for(let sx of [-.9,.9])for(let sy of [1.05,1.85])box(g,sx,sy,1.47,.48,.48,.035,M.glass,false);
+  box(g,0,.55,1.49,.55,1.05,.04,M.dark,false);
+ }else if(type==='industrial'){
+  box(g,0,1.2,0,3.8,2.4,3.1,mat(color,.25,.55));
+  const roof=box(g,0,2.55,0,4.0,.22,3.3,M.steel);
+  for(let i=0;i<4;i++)box(g,-1.35+i*.9,1.25,1.57,.55,.75,.05,M.glass,false);
+  for(let i=0;i<3;i++){cylinder(g,-1+i,2.95,-.5,.28,.28,.65,M.steel,12);cylinder(g,-1+i,3.3,-.5,.18,.18,.1,M.dark,12);}
+ }else if(type==='commercial'){
+  box(g,0,1.65,0,3.6,3.3,3.0,mat(color,.2,.48));
+  for(let y=.65;y<3;y+=.85)box(g,0,y,1.53,3.2,.42,.045,M.glass,false);
+  box(g,0,3.35,0,3.75,.18,3.15,M.steel);
+ }else{
+  box(g,0,1.45,0,3.7,2.9,3.0,mat(color,.12,.62));
+  box(g,0,3.0,0,3.9,.18,3.2,M.white);
+  for(let i=0;i<3;i++)box(g,-1.15+i*1.15,1.6,1.53,.7,1.15,.045,M.glass,false);
+  box(g,0,.65,1.56,.48,1.25,.05,M.white,false);
+  const crossV=box(g,1.55,2.55,1.56,.13,.8,.06,M.red,false);
+  const crossH=box(g,1.55,2.55,1.56,.8,.13,.06,M.red,false);
+ }
+ // Architectural finish: clean plinth, corner trims and subtle illuminated details
+ box(g,0,.18,0,4.35,.22,3.65,M.dark);
+ const trimMat=mat(color,.38,.32,color,.16);
+ box(g,0,.34,1.52,3.55,.07,.055,trimMat,false);
+ for(const sx of [-1.72,1.72]){
+   box(g,sx,1.35,1.505,.075,2.05,.07,M.steel,false);
+ }
+ // Softly lit window faces make the building types easier to distinguish
+ const windowGlow=mat(0x8edcf0,.12,.22,0x2b91b4,.42);
+ if(type==='residential'){
+   for(let sx of [-.9,.9])for(let sy of [1.05,1.85])box(g,sx,sy,1.493,.39,.39,.018,windowGlow,false);
+ }else if(type==='industrial'){
+   for(let i=0;i<4;i++)box(g,-1.35+i*.9,1.25,1.602,.48,.66,.018,windowGlow,false);
+ }else{
+   for(let i=0;i<3;i++)box(g,-1.15+i*1.15,1.6,1.56,.62,1.05,.018,windowGlow,false);
+ }
+ // low-voltage distribution cabinet
+ box(g,2.1,.75,-1.15,.55,1.35,.55,M.dark);
+ box(g,2.1,1.35,-1.15,.34,.08,.04,M.green,false);
+ label(name,x,4.1,z);
+}
+buildingLoad('RESIDENTIAL LOAD',-12,10,'residential',0x8d9eaa);
+buildingLoad('INDUSTRIAL LOAD',1,10,'industrial',0x6b8295);
+buildingLoad('COMMERCIAL LOAD',13,5,'commercial',0x347da0);
+buildingLoad('HOSPITAL LOAD',13,11,'hospital',0xd8e2e8);
+
+// Cable routes connect each asset into central hub / transformer.
+// Raised cable trays and smooth colored power conduits.
+line([[-12,1.2,-7],[-8,1.15,-5],[-5,1.1,-2],[-3.8,1.0,1.5]],0x238fc0,.075);
+line([[-11,1.0,3.6],[-8,1.0,3.2],[-5.2,1.0,2.2],[-3.8,1.0,1.5]],0x28b9b3,.075);
+line([[-2.5,1.15,1.5],[-.7,1.35,.6],[2,1.4,0]],0x27c8e8,.09);
+line([[2,1.4,0],[5,1.35,-1.2],[7.2,1.3,-4],[10,1.25,-6]],0x27c8e8,.09);
+line([[2,1.25,0],[1.5,1.2,4],[0,1.1,7],[1,1.1,10]],0x277ca9,.06);
+line([[2,1.25,0],[5,1.1,2],[9,1.1,4],[13,1.1,5]],0x277ca9,.06);
+line([[2,1.25,0],[5,1.1,5],[9,1.1,9],[13,1.1,11]],0x277ca9,.06);
+line([[2,1.25,0],[-2,1.1,5],[-7,1.1,8],[-12,1.1,10]],0x277ca9,.06);
+
+// Small support poles along cable corridors
+function pole(x,z){
+ cylinder(root,x,.75,z,.07,.07,1.5,M.steel,8);
+ box(root,x,1.48,z,.42,.08,.12,M.dark);
+}
+[[-7,-5],[-5,2],[6,-2],[7,3],[7,8],[-6,8]].forEach(p=>pole(p[0],p[1]));
+
+// Animated energy packets, each follows a path between network assets
+function makePath(points,color,count=7){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const particles=[];
+ for(let i=0;i<count;i++){
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95}));
+  root.add(mesh);particles.push({mesh,t:i/count});
+ }
+ return particles.map(p=>({curve,...p}));
+}
+const flows=[
+ ...makePath([[-12,1.35,-7],[-8,1.3,-5],[-5,1.25,-2],[-3.8,1.25,1.5],[0,1.5,.5],[2,1.5,0]],0x39d8ff,8),
+ ...makePath([[-11,1.2,3.6],[-8,1.2,3.2],[-5.2,1.2,2.2],[-3.8,1.25,1.5]],0x48e2b2,6),
+ ...makePath([[2,1.5,0],[5,1.4,-1.2],[7.2,1.35,-4],[10,1.35,-6]],0x39d8ff,7),
+ ...makePath([[2,1.35,0],[1.5,1.3,4],[0,1.2,7],[1,1.2,10]],0x42aaff,5),
+ ...makePath([[2,1.35,0],[5,1.2,2],[9,1.2,4],[13,1.2,5]],0x42aaff,5),
+ ...makePath([[2,1.35,0],[5,1.2,5],[9,1.2,9],[13,1.2,11]],0x42aaff,5),
+ ...makePath([[2,1.35,0],[-2,1.2,5],[-7,1.2,8],[-12,1.2,10]],0x42aaff,5)
+];
+
+// Small floor-level identification plates
+function marker(x,z,text){
+ const plate=box(root,x,.035,z,2.8,.04,.65,M.dark,false);
+ label(text,x,.72,z,'#8bb8d0');
+}
+marker(-12,-10,'GENERATION');marker(-11,6,'STORAGE');marker(10,-9,'CONVERSION');
+
+// Selectable loads: click any building in the 3D scene to inspect its readings.
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+const loadModal=document.getElementById('loadModal');
+const closeLoad=document.getElementById('loadClose');
+const sceneWrap=document.querySelector('.scene-wrap');
+let selectedLoadInfo=null;
+const loadSwitch=document.getElementById('loadSwitch');
+const totalLoadValue=document.getElementById('totalLoadValue');
+const balanceValue=document.getElementById('balanceValue');
+const solarGeneration=850;
+
+function allLoadInfos(){
+ const found=[];
+ root.traverse(obj=>{if(obj.userData && obj.userData.loadInfo)found.push(obj.userData.loadInfo);});
+ return found;
+}
+function updateSystemTotals(){
+ const activeTotal=allLoadInfos().reduce((sum,info)=>sum+(info.isOn?info.nominalPower:0),0);
+ const rounded=Math.round(activeTotal);
+ totalLoadValue.textContent=rounded;
+ const balance=solarGeneration-rounded;
+ balanceValue.textContent=(balance>=0?'+':'')+balance;
+ const kpi=document.getElementById('kpiLoad');if(kpi)kpi.innerHTML=rounded+' <em>kW</em>';
+ const lower=document.getElementById('lowerLoad');if(lower)lower.textContent=rounded+' kW';
+ const bar=document.getElementById('loadBar');if(bar)bar.style.width=Math.min(100,rounded/solarGeneration*100)+'%';
+ if(window.gridnexSettingsCheck)window.gridnexSettingsCheck();
+}
+function renderLoadState(info){
+ info.status=info.isOn?'ONLINE':'OFFLINE';
+ document.getElementById('loadStatus').textContent=info.status;
+ document.getElementById('loadStatus').style.color=info.isOn?'#58e0b0':'#ff9ba7';
+ document.getElementById('loadPower').textContent=(info.isOn?info.nominalPower:0)+' kW';
+ document.getElementById('loadLevel').textContent=info.isOn?info.level:'0%';
+ loadSwitch.textContent=info.isOn?'TURN OFF':'TURN ON';
+ loadSwitch.classList.toggle('off',!info.isOn);
+ if(info.root && info.root.userData.loadHalo){
+  info.root.userData.loadHalo.material.color.set(info.isOn?0x2aaacb:0x687785);
+  info.root.userData.loadHalo.material.opacity=info.isOn?.58:.22;
+ }
+}
+function showLoadDetails(info){
+ selectedLoadInfo=info;
+ document.getElementById('loadTitle').textContent=info.name;
+ document.getElementById('loadEnergy').textContent=info.energy;
+ document.getElementById('loadVoltage').textContent=info.voltage;
+ document.getElementById('loadPF').textContent=info.pf;
+ document.getElementById('loadFrequency').textContent=info.frequency;
+ renderLoadState(info);
+ loadModal.classList.add('show');
+}
+updateSystemTotals();
+
+function setLoadState(info,isOn){
+ info.isOn=isOn;
+ renderLoadState(info);
+ updateSystemTotals();
+}
+loadSwitch.addEventListener('click',()=>{
+ if(selectedLoadInfo)setLoadState(selectedLoadInfo,!selectedLoadInfo.isOn);
+});
+function hideLoadDetails(){loadModal.classList.remove('show');selectedLoadInfo=null;}
+closeLoad.addEventListener('click',hideLoadDetails);
+loadModal.addEventListener('click',e=>{if(e.target===loadModal)hideLoadDetails();});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')hideLoadDetails();});
+function pickLoadAt(clientX,clientY){
+ if(loadModal.classList.contains('show'))return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!rect.width||!rect.height)return;
+ pointer.x=((clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((clientY-rect.top)/rect.height)*2+1;
+ raycaster.setFromCamera(pointer,camera);
+ const hits=raycaster.intersectObjects(root.children,true);
+ for(const hit of hits){
+  let node=hit.object;
+  while(node && !node.userData.isLoad)node=node.parent;
+  if(node && node.userData.loadInfo){
+   showLoadDetails(node.userData.loadInfo);
+   return;
+  }
+ }
+}
+// Use pointer events and distinguish a tap from a drag.
+// This supports mouse, touchscreen and stylus without opening a card while orbiting.
+let pressStart=null;
+renderer.domElement.style.touchAction='none';
+renderer.domElement.addEventListener('pointerdown',e=>{
+ pressStart={x:e.clientX,y:e.clientY,id:e.pointerId};
+},{passive:true});
+renderer.domElement.addEventListener('pointerup',e=>{
+ if(!pressStart||pressStart.id!==e.pointerId)return;
+ const dx=e.clientX-pressStart.x,dy=e.clientY-pressStart.y;
+ const distance=Math.hypot(dx,dy);
+ pressStart=null;
+ if(distance<=11)pickLoadAt(e.clientX,e.clientY);
+},{passive:true});
+renderer.domElement.addEventListener('pointercancel',()=>{pressStart=null;});
+renderer.domElement.addEventListener('pointermove',e=>{
+ const rect=renderer.domElement.getBoundingClientRect();
+ pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+ raycaster.setFromCamera(pointer,camera);
+ const hits=raycaster.intersectObjects(root.children,true);
+ let overLoad=false;
+ for(const hit of hits){
+  let node=hit.object;
+  while(node && !node.userData.isLoad)node=node.parent;
+  if(node && node.userData.isLoad){overLoad=true;break;}
+ }
+ renderer.domElement.style.cursor=overLoad?'pointer':'grab';
+});
+
+// Panel toggle
+const panel=document.getElementById('panel'),toggle=document.getElementById('toggle');
+// On phones, keep the monitoring drawer closed initially so it does not cover the 3D scene.
+if(window.matchMedia('(max-width:760px)').matches){
+ panel.classList.add('collapsed');
+ toggle.classList.add('closed');
+ toggle.textContent='‹';
+}
+toggle.addEventListener('click',()=>{
+ const hidden=panel.classList.toggle('collapsed');
+ toggle.classList.toggle('closed',hidden);
+ toggle.textContent=hidden?'‹':'›';
+ setTimeout(resize,300);
+});
+function resize(){
+ const w=host.clientWidth,h=host.clientHeight;
+ if(!w||!h)return;
+ camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);
+}
+window.addEventListener('resize',resize);
+renderer.domElement.addEventListener('dblclick',()=>{
+ camera.position.copy(initialCamera);controls.target.copy(target);controls.update();
+});
+let last=performance.now();
+function animate(now){
+ requestAnimationFrame(animate);
+ const dt=Math.min((now-last)/1000,.04);last=now;
+ for(const p of flows){
+  p.t=(p.t+dt*.105)%1;
+  p.mesh.position.copy(p.curve.getPointAt(p.t));
+ }
+ controls.update();
+ renderer.render(scene,camera);
+}
+resize();requestAnimationFrame(animate);
+window.gridnexGetLoads=allLoadInfos;
+window.gridnexCheckThresholds=()=>{if(window.gridnexSettingsCheck)window.gridnexSettingsCheck();};
+})();
+
+// GRIDNEX settings: persisted local preferences and browser-side tools
+const SETTINGS_KEY='gridnex.settings.v2';
+const DEFAULT_SETTINGS={language:'en',theme:'dark',accent:'cyan',alerts:true,loadAlert:true,batteryAlert:true,batteryThreshold:20,maxLoad:700,batteryLevel:86,priorities:{'HOSPITAL LOAD':1,'RESIDENTIAL LOAD':2,'INDUSTRIAL LOAD':3,'COMMERCIAL LOAD':4},pin:''};
+let appSettings={...DEFAULT_SETTINGS};
+try{const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');appSettings={...DEFAULT_SETTINGS,...saved,priorities:{...DEFAULT_SETTINGS.priorities,...(saved.priorities||{})}};}catch(e){}
+const accents={cyan:['#49d5ee','73,213,238'],blue:['#5598ff','85,152,255'],green:['#50dfa8','80,223,168'],amber:['#f0b84b','240,184,75']};
+const dictionaries={
+ en:{settingsTitle:'Settings',settingsDesc:'Customize GRIDNEX and manage local simulation preferences.',appearance:'Appearance & Language',language:'Application language',theme:'Display theme',accent:'Interface accent',notifications:'Notifications & Alarms',enableAlerts:'Enable in-app alerts',loadAlert:'Alert when load limit is exceeded',batteryAlert:'Low battery warning',batteryThreshold:'Low battery threshold (%)',energyControl:'Energy Control',maxLoad:'Maximum total load (kW)',batteryLevel:'Battery charge level (%) · demo',loadPriority:'Load Priority',security:'Security & App Lock',dataTools:'Data & Storage',about:'About GRIDNEX'},
+ fr:{settingsTitle:'Paramètres',settingsDesc:'Personnalisez GRIDNEX et gérez les préférences locales.',appearance:'Apparence et langue',language:'Langue de l’application',theme:'Thème',accent:'Couleur d’accent',notifications:'Notifications et alarmes',enableAlerts:'Activer les alertes',loadAlert:'Alerte si la limite de charge est dépassée',batteryAlert:'Alerte batterie faible',batteryThreshold:'Seuil de batterie faible (%)',energyControl:'Contrôle énergétique',maxLoad:'Charge totale maximale (kW)',batteryLevel:'Niveau de batterie (%) · démo',loadPriority:'Priorité des charges',security:'Sécurité et verrouillage',dataTools:'Données et stockage',about:'À propos de GRIDNEX'},
+ ar:{settingsTitle:'الإعدادات',settingsDesc:'تخصيص GRIDNEX وإدارة تفضيلات المحاكاة المحلية.',appearance:'المظهر واللغة',language:'لغة التطبيق',theme:'مظهر العرض',accent:'لون الواجهة',notifications:'الإشعارات والتنبيهات',enableAlerts:'تفعيل التنبيهات داخل التطبيق',loadAlert:'تنبيه عند تجاوز حد الأحمال',batteryAlert:'تنبيه انخفاض البطارية',batteryThreshold:'حد انخفاض البطارية (%)',energyControl:'التحكم بالطاقة',maxLoad:'الحد الأقصى للأحمال (kW)',batteryLevel:'مستوى شحن البطارية (%) · تجريبي',loadPriority:'أولوية الأحمال',security:'الأمان وقفل التطبيق',dataTools:'البيانات والتخزين',about:'حول GRIDNEX'}
+};
+const fullUiTranslations={"CONTROL SYSTEM": {"ar": "نظام التحكم", "fr": "SYSTÈME DE CONTRÔLE"}, "WORKSPACE": {"ar": "مساحة العمل", "fr": "ESPACE DE TRAVAIL"}, "SYSTEM": {"ar": "النظام", "fr": "SYSTÈME"}, "Settings": {"ar": "الإعدادات", "fr": "Paramètres"}, "DEMO ENVIRONMENT": {"ar": "بيئة تجريبية", "fr": "ENVIRONNEMENT DE DÉMO"}, "Local simulation interface": {"ar": "واجهة محاكاة محلية", "fr": "Interface de simulation locale"}, "OPERATIONS / OVERVIEW": {"ar": "العمليات / نظرة عامة", "fr": "OPÉRATIONS / VUE GÉNÉRALE"}, "SYSTEM READY": {"ar": "النظام جاهز", "fr": "SYSTÈME PRÊT"}, "DEMO MODE": {"ar": "الوضع التجريبي", "fr": "MODE DÉMO"}, "MICROGRID OPERATIONS CENTER": {"ar": "مركز تشغيل الشبكة الكهربائية المصغرة", "fr": "CENTRE DE CONTRÔLE DU MICRO-RÉSEAU"}, "System Overview": {"ar": "نظرة عامة على النظام", "fr": "Vue générale du système"}, "Monitor generation, consumption and network performance.": {"ar": "راقب إنتاج الطاقة واستهلاكها وأداء الشبكة.", "fr": "Surveillez la production, la consommation et les performances du réseau."}, "SIMULATION ACTIVE": {"ar": "المحاكاة نشطة", "fr": "SIMULATION ACTIVE"}, "INSTALLED GENERATION": {"ar": "القدرة الإنتاجية المركبة", "fr": "PUISSANCE DE PRODUCTION INSTALLÉE"}, "PV SOURCE": {"ar": "مصدر الطاقة الشمسية", "fr": "SOURCE PHOTOVOLTAÏQUE"}, "ACTIVE CONSUMPTION": {"ar": "الاستهلاك الحالي", "fr": "CONSOMMATION ACTUELLE"}, "CONNECTED LOADS": {"ar": "الأحمال المتصلة", "fr": "CHARGES CONNECTÉES"}, "BATTERY CHARGE": {"ar": "شحن البطارية", "fr": "CHARGE DE LA BATTERIE"}, "STORAGE AVAILABLE": {"ar": "التخزين متاح", "fr": "STOCKAGE DISPONIBLE"}, "GRID FREQUENCY": {"ar": "تردد الشبكة", "fr": "FRÉQUENCE DU RÉSEAU"}, "NOMINAL": {"ar": "اسمي", "fr": "NOMINAL"}, "NETWORK DIGITAL TWIN": {"ar": "التوأم الرقمي للشبكة", "fr": "JUMEAU NUMÉRIQUE DU RÉSEAU"}, "INTERACTIVE 3D VIEW": {"ar": "عرض ثلاثي الأبعاد تفاعلي", "fr": "VUE 3D INTERACTIVE"}, "SMART MICROGRID": {"ar": "الشبكة الكهربائية الذكية المصغرة", "fr": "MICRO-RÉSEAU INTELLIGENT"}, "3D ENERGY NETWORK · SYSTEM OVERVIEW": {"ar": "شبكة الطاقة ثلاثية الأبعاد · نظرة عامة", "fr": "RÉSEAU ÉNERGÉTIQUE 3D · VUE GÉNÉRALE"}, "DRAG TO ORBIT · SCROLL TO ZOOM · CLICK A LOAD FOR DETAILS · DOUBLE-CLICK TO RESET": {"ar": "اسحب لتدوير المشهد · مرّر للتكبير · اضغط على حمل لعرض تفاصيله · انقر مرتين لإعادة الضبط", "fr": "FAITES GLISSER POUR TOURNER · DÉFILEZ POUR ZOOMER · CLIQUEZ SUR UNE CHARGE POUR LES DÉTAILS · DOUBLE-CLIQUEZ POUR RÉINITIALISER"}, "MICROGRID LOAD DETAILS": {"ar": "تفاصيل أحمال الشبكة", "fr": "DÉTAILS DES CHARGES DU MICRO-RÉSEAU"}, "LOAD": {"ar": "الحمل", "fr": "CHARGE"}, "ONLINE": {"ar": "يعمل", "fr": "EN LIGNE"}, "ACTIVE POWER": {"ar": "القدرة الفعالة", "fr": "PUISSANCE ACTIVE"}, "ENERGY TODAY": {"ar": "الطاقة اليوم", "fr": "ÉNERGIE DU JOUR"}, "VOLTAGE": {"ar": "الجهد الكهربائي", "fr": "TENSION"}, "POWER FACTOR": {"ar": "معامل القدرة", "fr": "FACTEUR DE PUISSANCE"}, "FREQUENCY": {"ar": "التردد", "fr": "FRÉQUENCE"}, "LOAD LEVEL": {"ar": "مستوى الحمل", "fr": "NIVEAU DE CHARGE"}, "LOAD CONTROL": {"ar": "التحكم في الحمل", "fr": "CONTRÔLE DE LA CHARGE"}, "TURN OFF": {"ar": "إيقاف", "fr": "ARRÊTER"}, "TURN ON": {"ar": "تشغيل", "fr": "ACTIVER"}, "Illustrative demonstration readings. Connect real meters or sensors to display live measurements.": {"ar": "قراءات توضيحية تجريبية. اربط عدادات أو حساسات حقيقية لعرض القياسات المباشرة.", "fr": "Mesures illustratives de démonstration. Connectez des compteurs ou capteurs réels pour afficher les mesures en direct."}, "ENERGY MONITORING": {"ar": "مراقبة الطاقة", "fr": "SURVEILLANCE ÉNERGÉTIQUE"}, "SOLAR GENERATION": {"ar": "إنتاج الطاقة الشمسية", "fr": "PRODUCTION SOLAIRE"}, "PHOTOVOLTAIC SOURCE": {"ar": "مصدر كهروضوئي", "fr": "SOURCE PHOTOVOLTAÏQUE"}, "TOTAL LOAD": {"ar": "إجمالي الأحمال", "fr": "CHARGE TOTALE"}, "CONNECTED CONSUMPTION": {"ar": "الاستهلاك المتصل", "fr": "CONSOMMATION CONNECTÉE"}, "BATTERY STATE OF CHARGE": {"ar": "حالة شحن البطارية", "fr": "ÉTAT DE CHARGE DE LA BATTERIE"}, "ENERGY STORAGE": {"ar": "تخزين الطاقة", "fr": "STOCKAGE D’ÉNERGIE"}, "GRID CONDITION": {"ar": "حالة الشبكة", "fr": "ÉTAT DU RÉSEAU"}, "STABLE": {"ar": "مستقرة", "fr": "STABLE"}, "NETWORK STATUS": {"ar": "حالة الشبكة", "fr": "ÉTAT DU RÉSEAU"}, "POWER BALANCE": {"ar": "توازن الطاقة", "fr": "BILAN ÉNERGÉTIQUE"}, "GENERATION − LOAD · DEMO": {"ar": "الإنتاج − الأحمال · تجريبي", "fr": "PRODUCTION − CHARGE · DÉMO"}, "Illustrative interface values. No live sensors or electrical simulation are connected yet.": {"ar": "قيم توضيحية للواجهة. لم يتم ربط حساسات حقيقية أو محاكاة كهربائية فعلية بعد.", "fr": "Valeurs illustratives. Aucun capteur réel ni simulation électrique n’est encore connecté."}, "LIVE DEMO VALUES": {"ar": "قيم تجريبية مباشرة", "fr": "VALEURS DE DÉMO"}, "Generation": {"ar": "الإنتاج", "fr": "Production"}, "Consumption": {"ar": "الاستهلاك", "fr": "Consommation"}, "ALL SYSTEMS NORMAL": {"ar": "جميع الأنظمة طبيعية", "fr": "TOUS LES SYSTÈMES SONT NORMAUX"}, "PV array": {"ar": "مصفوفة الألواح الشمسية", "fr": "Champ photovoltaïque"}, "Battery storage": {"ar": "تخزين البطارية", "fr": "Stockage par batterie"}, "Inverter": {"ar": "العاكس الكهربائي", "fr": "Onduleur"}, "REAL-TIME VISUALIZATION": {"ar": "عرض في الوقت الحقيقي", "fr": "VISUALISATION EN TEMPS RÉEL"}, "Digital Twin": {"ar": "التوأم الرقمي", "fr": "Jumeau numérique"}, "Explore the physical layout and energy pathways of the microgrid.": {"ar": "استكشف التوزيع الفيزيائي ومسارات الطاقة في الشبكة المصغرة.", "fr": "Explorez la disposition physique et les flux énergétiques du micro-réseau."}, "3D MODEL": {"ar": "نموذج ثلاثي الأبعاد", "fr": "MODÈLE 3D"}, "3D NETWORK VIEW": {"ar": "عرض الشبكة ثلاثي الأبعاد", "fr": "VUE 3D DU RÉSEAU"}, "Use the Overview page to interact with the full 3D model, rotate the camera, zoom and select individual loads.": {"ar": "استخدم صفحة النظرة العامة للتفاعل مع النموذج ثلاثي الأبعاد وتدوير الكاميرا والتكبير واختيار الأحمال.", "fr": "Utilisez la page Vue générale pour interagir avec le modèle 3D, tourner la caméra, zoomer et sélectionner les charges."}, "OPEN 3D OVERVIEW": {"ar": "فتح العرض ثلاثي الأبعاد", "fr": "OUVRIR LA VUE 3D"}, "FIELD EQUIPMENT": {"ar": "معدات الميدان", "fr": "ÉQUIPEMENTS DE TERRAIN"}, "Assets & Loads": {"ar": "الأصول والأحمال", "fr": "Équipements et charges"}, "Equipment inventory and controllable consumption points.": {"ar": "قائمة المعدات ونقاط الاستهلاك القابلة للتحكم.", "fr": "Inventaire des équipements et points de consommation contrôlables."}, "4 LOAD GROUPS": {"ar": "4 مجموعات أحمال", "fr": "4 GROUPES DE CHARGES"}, "Solar PV Array": {"ar": "مصفوفة الألواح الشمسية", "fr": "Champ photovoltaïque"}, "Photovoltaic generation · DEMO": {"ar": "إنتاج كهروضوئي · تجريبي", "fr": "Production photovoltaïque · DÉMO"}, "Battery Bank": {"ar": "بنك البطاريات", "fr": "Banc de batteries"}, "State of charge · DEMO": {"ar": "حالة الشحن · تجريبي", "fr": "État de charge · DÉMO"}, "Power Inverter": {"ar": "عاكس الطاقة", "fr": "Onduleur de puissance"}, "DC / AC conversion · DEMO": {"ar": "تحويل التيار المستمر / المتناوب · تجريبي", "fr": "Conversion CC / CA · DÉMO"}, "Distribution Hub": {"ar": "مركز التوزيع", "fr": "Centre de distribution"}, "Microgrid bus · DEMO": {"ar": "قضبان الشبكة المصغرة · تجريبي", "fr": "Bus du micro-réseau · DÉMO"}, "Select a building or load directly in the 3D Digital Twin to inspect its parameters and switch it on or off.": {"ar": "اختر مبنى أو حملاً مباشرة من التوأم الرقمي ثلاثي الأبعاد لمعاينة بياناته وتشغيله أو إيقافه.", "fr": "Sélectionnez un bâtiment ou une charge dans le jumeau numérique 3D pour consulter ses paramètres et l’activer ou le désactiver."}, "MANAGE LOADS IN 3D VIEW": {"ar": "إدارة الأحمال في العرض ثلاثي الأبعاد", "fr": "GÉRER LES CHARGES EN VUE 3D"}, "PERFORMANCE MONITORING": {"ar": "مراقبة الأداء", "fr": "SURVEILLANCE DES PERFORMANCES"}, "Analytics": {"ar": "التحليلات", "fr": "Analytique"}, "Key indicators for the current demonstration scenario.": {"ar": "المؤشرات الرئيسية لسيناريو العرض الحالي.", "fr": "Indicateurs clés du scénario de démonstration actuel."}, "SAMPLE DATA": {"ar": "بيانات نموذجية", "fr": "DONNÉES EXEMPLES"}, "ENERGY GENERATED": {"ar": "الطاقة المنتجة", "fr": "ÉNERGIE PRODUITE"}, "Daily PV Output": {"ar": "الإنتاج الشمسي اليومي", "fr": "Production photovoltaïque quotidienne"}, "Illustrative sample": {"ar": "عينة توضيحية", "fr": "Exemple illustratif"}, "ENERGY CONSUMED": {"ar": "الطاقة المستهلكة", "fr": "ÉNERGIE CONSOMMÉE"}, "Daily Load": {"ar": "الحمل اليومي", "fr": "Charge quotidienne"}, "SELF-CONSUMPTION": {"ar": "الاستهلاك الذاتي", "fr": "AUTOCONSOMMATION"}, "PV Utilization": {"ar": "استغلال الطاقة الشمسية", "fr": "Utilisation photovoltaïque"}, "POWER QUALITY": {"ar": "جودة الطاقة", "fr": "QUALITÉ DE L’ÉNERGIE"}, "Frequency": {"ar": "التردد", "fr": "Fréquence"}, "Nominal reference": {"ar": "القيمة المرجعية الاسمية", "fr": "Référence nominale"}, "DATA NOTE": {"ar": "ملاحظة حول البيانات", "fr": "NOTE SUR LES DONNÉES"}, "These are demonstration values, not readings from physical meters. Historical charts will become meaningful when measurement data is connected.": {"ar": "هذه قيم تجريبية وليست قراءات من عدادات فعلية. ستصبح الرسوم التاريخية ذات معنى عند ربط بيانات القياس.", "fr": "Il s’agit de valeurs de démonstration, pas de mesures réelles. Les graphiques historiques seront pertinents lorsque les données de mesure seront connectées."}, "EVENT MANAGEMENT": {"ar": "إدارة الأحداث", "fr": "GESTION DES ÉVÉNEMENTS"}, "Alarms & Events": {"ar": "الإنذارات والأحداث", "fr": "Alarmes et événements"}, "System messages and operational notifications.": {"ar": "رسائل النظام والإشعارات التشغيلية.", "fr": "Messages système et notifications opérationnelles."}, "NO ACTIVE ALARMS": {"ar": "لا توجد إنذارات نشطة", "fr": "AUCUNE ALARME ACTIVE"}, "System initialized": {"ar": "تم تهيئة النظام", "fr": "Système initialisé"}, "Simulation environment ready · Informational": {"ar": "بيئة المحاكاة جاهزة · معلومات", "fr": "Environnement de simulation prêt · Information"}, "NOW": {"ar": "الآن", "fr": "MAINTENANT"}, "Microgrid status normal": {"ar": "حالة الشبكة المصغرة طبيعية", "fr": "État du micro-réseau normal"}, "No active faults reported · Informational": {"ar": "لم يتم الإبلاغ عن أعطال نشطة · معلومات", "fr": "Aucune panne active signalée · Information"}, "SYSTEM CONFIGURATION": {"ar": "تهيئة النظام", "fr": "CONFIGURATION DU SYSTÈME"}, "Personalize your workspace": {"ar": "خصص مساحة عملك", "fr": "Personnalisez votre espace de travail"}, "Configure local alerts": {"ar": "تهيئة التنبيهات المحلية", "fr": "Configurer les alertes locales"}, "Simulation operating limits": {"ar": "حدود تشغيل المحاكاة", "fr": "Limites de fonctionnement de la simulation"}, "Battery charge is a demonstration value; no physical battery controller is connected.": {"ar": "قيمة شحن البطارية تجريبية؛ لا يوجد متحكم فعلي بالبطارية متصل.", "fr": "Le niveau de batterie est une valeur de démonstration ; aucun contrôleur physique n’est connecté."}, "Set operational importance (1 = highest)": {"ar": "حدد الأهمية التشغيلية (1 = الأعلى)", "fr": "Définissez l’importance opérationnelle (1 = maximale)"}, "Local interface access control": {"ar": "التحكم في الوصول إلى الواجهة المحلية", "fr": "Contrôle d’accès à l’interface locale"}, "PIN lock is not enabled": {"ar": "قفل PIN غير مفعّل", "fr": "Le verrouillage PIN est désactivé"}, "Set / Change PIN": {"ar": "تعيين / تغيير رمز PIN", "fr": "Définir / modifier le code PIN"}, "Lock now": {"ar": "قفل الآن", "fr": "Verrouiller maintenant"}, "Remove PIN": {"ar": "إزالة رمز PIN", "fr": "Supprimer le PIN"}, "PIN lock is a convenience lock for this browser interface, not enterprise-grade authentication or encryption.": {"ar": "قفل PIN وسيلة حماية بسيطة لهذه الواجهة في المتصفح، وليس نظام مصادقة أو تشفير بمستوى المؤسسات.", "fr": "Le verrouillage PIN est une protection simple de cette interface navigateur, pas une authentification ou un chiffrement de niveau entreprise."}, "Export reports and manage preferences": {"ar": "تصدير التقارير وإدارة التفضيلات", "fr": "Exporter les rapports et gérer les préférences"}, "Export report CSV": {"ar": "تصدير التقرير بصيغة CSV", "fr": "Exporter le rapport CSV"}, "Download settings backup": {"ar": "تنزيل نسخة احتياطية للإعدادات", "fr": "Télécharger la sauvegarde des paramètres"}, "Restore backup": {"ar": "استعادة النسخة الاحتياطية", "fr": "Restaurer la sauvegarde"}, "Restore default settings": {"ar": "استعادة الإعدادات الافتراضية", "fr": "Restaurer les paramètres par défaut"}, "Exports and backups are generated locally in your browser.": {"ar": "يتم إنشاء الملفات المصدّرة والنسخ الاحتياطية محلياً في متصفحك.", "fr": "Les exports et sauvegardes sont générés localement dans votre navigateur."}, "Application information": {"ar": "معلومات التطبيق", "fr": "Informations sur l’application"}, "Smart Microgrid · Industrial SCADA": {"ar": "الشبكة المصغرة الذكية · نظام SCADA صناعي", "fr": "Micro-réseau intelligent · SCADA industriel"}, "Version": {"ar": "الإصدار", "fr": "Version"}, "2.1 · Full Application": {"ar": "2.1 · التطبيق الكامل", "fr": "2.1 · Application complète"}, "Platform": {"ar": "المنصة", "fr": "Plateforme"}, "Browser-based HTML application": {"ar": "تطبيق HTML يعمل عبر المتصفح", "fr": "Application HTML basée sur navigateur"}, "Operating mode": {"ar": "وضع التشغيل", "fr": "Mode de fonctionnement"}, "Local demonstration simulation": {"ar": "محاكاة تجريبية محلية", "fr": "Simulation locale de démonstration"}, "Data source": {"ar": "مصدر البيانات", "fr": "Source des données"}, "Illustrative values · No live sensors": {"ar": "قيم توضيحية · لا توجد حساسات مباشرة", "fr": "Valeurs illustratives · Aucun capteur en direct"}, "GRIDNEX INDUSTRIAL SCADA": {"ar": "GRIDNEX للتحكم الصناعي SCADA", "fr": "GRIDNEX SCADA INDUSTRIEL"}, "SMART MICROGRID MANAGEMENT · DEMO ENVIRONMENT": {"ar": "إدارة الشبكة الكهربائية الذكية المصغرة · بيئة تجريبية", "fr": "GESTION DU MICRO-RÉSEAU INTELLIGENT · ENVIRONNEMENT DÉMO"}, "GRIDNEX LOCKED": {"ar": "تم قفل GRIDNEX", "fr": "GRIDNEX VERROUILLÉ"}, "Enter your local application PIN to continue.": {"ar": "أدخل رمز PIN المحلي للتطبيق للمتابعة.", "fr": "Saisissez votre code PIN local pour continuer."}, "UNLOCK APPLICATION": {"ar": "فتح قفل التطبيق", "fr": "DÉVERROUILLER L’APPLICATION"}, "HOW TO READ THIS MODEL": {"ar": "كيفية قراءة المخطط", "fr": "COMMENT LIRE CE MODÈLE"}, "Solar panels · electricity generation": {"ar": "الألواح الشمسية · إنتاج الكهرباء", "fr": "Panneaux solaires · production d’électricité"}, "Battery · energy storage": {"ar": "البطارية · تخزين الطاقة", "fr": "Batterie · stockage d’énergie"}, "Inverter · DC / AC conversion": {"ar": "العاكس · تحويل مستمر / متناوب", "fr": "Onduleur · conversion CC / CA"}, "Transformer · voltage adjustment": {"ar": "المحوّل · تعديل الجهد الكهربائي", "fr": "Transformateur · adaptation de tension"}, "Buildings · electricity consumers": {"ar": "المباني · مستهلكو الكهرباء", "fr": "Bâtiments · consommateurs d’électricité"}, "ENERGY PATH": {"ar": "مسار الطاقة", "fr": "PARCOURS DE L’ÉNERGIE"}, "Generate": {"ar": "إنتاج", "fr": "Produire"}, "Convert": {"ar": "تحويل", "fr": "Convertir"}, "Distribute": {"ar": "توزيع", "fr": "Distribuer"}, "Consume": {"ar": "استهلاك", "fr": "Consommer"}, "Battery stores surplus energy.": {"ar": "تخزّن البطارية الطاقة الفائضة.", "fr": "La batterie stocke l’énergie excédentaire."}};
+function translateFullInterface(){const lang=appSettings.language;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){const parent=n.parentElement;if(!parent||parent.closest('script,style,textarea,input,select,option'))continue;if(!n.__gridnexOriginal)n.__gridnexOriginal=n.nodeValue;if(lang==='en'){n.nodeValue=n.__gridnexOriginal;continue;}const key=n.__gridnexOriginal.trim();const translated=fullUiTranslations[key]?.[lang];if(translated)n.nodeValue=n.__gridnexOriginal.replace(key,translated);}document.querySelectorAll('[placeholder]').forEach(el=>{if(!el.dataset.originalPlaceholder)el.dataset.originalPlaceholder=el.placeholder;const t=fullUiTranslations[el.dataset.originalPlaceholder]?.[lang];if(t)el.placeholder=t;else if(lang==='en')el.placeholder=el.dataset.originalPlaceholder;});}
+function persistSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));}
+function feedback(msg){const el=document.getElementById('settingsFeedback');if(el)el.textContent=msg;}
+function toast(msg){if(!appSettings.alerts)return;const host=document.getElementById('toastHost');host.innerHTML='';const el=document.createElement('div');el.className='toast-alert';el.textContent=msg;host.appendChild(el);setTimeout(()=>el.remove(),4500);}
+function applyPreferences(){document.body.classList.toggle('light-theme',appSettings.theme==='light');const c=accents[appSettings.accent]||accents.cyan;document.documentElement.style.setProperty('--accent',c[0]);document.documentElement.style.setProperty('--accent-rgb',c[1]);document.documentElement.lang=appSettings.language;document.documentElement.dir=appSettings.language==='ar'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;const val=(dictionaries[appSettings.language]||dictionaries.en)[key];if(val)el.textContent=val;});document.querySelectorAll('.nav-item').forEach((el,i)=>{if(appSettings.language==='ar'){const names=['نظرة عامة','التوأم الرقمي','الأصول والأحمال','التحليلات','الإنذارات والأحداث','الإعدادات'];const span=el.querySelector('span');el.childNodes[1].textContent=names[i]||el.childNodes[1].textContent;}else if(appSettings.language==='fr'){const names=['Vue générale','Jumeau numérique','Équipements et charges','Analytique','Alarmes et événements','Paramètres'];el.childNodes[1].textContent=names[i]||el.childNodes[1].textContent;}else{const names=['Overview','Digital Twin','Assets & Loads','Analytics','Alarms & Events','Settings'];el.childNodes[1].textContent=names[i]||el.childNodes[1].textContent;}});translateFullInterface();}
+function renderPriorityControls(){const host=document.getElementById('priorityList');if(!host)return;const infos=typeof window.gridnexGetLoads==='function'?window.gridnexGetLoads():[];host.innerHTML='';infos.sort((a,b)=>(appSettings.priorities[a.name]||99)-(appSettings.priorities[b.name]||99)).forEach(info=>{const row=document.createElement('label');row.className='priority-row';const name=document.createElement('span');name.textContent=info.name;const sel=document.createElement('select');sel.setAttribute('aria-label','Priority for '+info.name);for(let n=1;n<=infos.length;n++){const o=document.createElement('option');o.value=n;o.textContent='Priority '+n;o.selected=Number(appSettings.priorities[info.name]||99)===n;sel.appendChild(o);}sel.addEventListener('change',()=>{appSettings.priorities[info.name]=Number(sel.value);persistSettings();renderPriorityControls();feedback('Load priorities saved locally.');});row.append(name,sel);host.appendChild(row);});}
+function syncSettingsUI(){const map={prefLanguage:'language',prefTheme:'theme',prefAccent:'accent',prefAlerts:'alerts',prefLoadAlert:'loadAlert',prefBatteryAlert:'batteryAlert',prefBatteryThreshold:'batteryThreshold',prefMaxLoad:'maxLoad',prefBatteryLevel:'batteryLevel'};Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.type==='checkbox'?el.checked=!!appSettings[key]:el.value=appSettings[key];});const status=document.getElementById('pinStatus');if(status){status.textContent=appSettings.pin?'PIN lock is enabled':'PIN lock is not enabled';status.classList.toggle('enabled',!!appSettings.pin);}renderPriorityControls();}
+function checkThresholds(){if(!appSettings.alerts)return;const total=typeof window.gridnexGetLoads==='function'?window.gridnexGetLoads().reduce((s,x)=>s+(x.isOn?x.nominalPower:0),0):0;if(appSettings.loadAlert&&total>Number(appSettings.maxLoad))toast('Load limit exceeded: '+Math.round(total)+' kW / '+appSettings.maxLoad+' kW');if(appSettings.batteryAlert&&Number(appSettings.batteryLevel)<Number(appSettings.batteryThreshold))toast('Low battery warning: '+appSettings.batteryLevel+'%');}
+['prefLanguage','prefTheme','prefAccent','prefAlerts','prefLoadAlert','prefBatteryAlert','prefBatteryThreshold','prefMaxLoad','prefBatteryLevel'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener('change',()=>{const key={prefLanguage:'language',prefTheme:'theme',prefAccent:'accent',prefAlerts:'alerts',prefLoadAlert:'loadAlert',prefBatteryAlert:'batteryAlert',prefBatteryThreshold:'batteryThreshold',prefMaxLoad:'maxLoad',prefBatteryLevel:'batteryLevel'}[id];appSettings[key]=el.type==='checkbox'?el.checked:Number.isNaN(Number(el.value))?el.value:(['language','theme','accent'].includes(key)?el.value:Number(el.value));if(['batteryThreshold','maxLoad','batteryLevel'].includes(key)){const limits={batteryThreshold:[1,100],maxLoad:[1,10000],batteryLevel:[0,100]}[key];appSettings[key]=Math.min(limits[1],Math.max(limits[0],Number(el.value)||limits[0]));el.value=appSettings[key];}persistSettings();applyPreferences();feedback('Settings saved on this device.');checkThresholds();});});
+function downloadFile(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+document.getElementById('exportCsvBtn').addEventListener('click',()=>{const rows=[['Asset','Status','Power_kW','Energy_today','Voltage','Power_factor','Frequency','Priority'],...window.gridnexGetLoads().map(x=>[x.name,x.isOn?'ONLINE':'OFFLINE',x.isOn?x.nominalPower:0,x.energy,x.voltage,x.pf,x.frequency,appSettings.priorities[x.name]||''])];rows.push(['SYSTEM','DEMO',window.gridnexGetLoads().reduce((s,x)=>s+(x.isOn?x.nominalPower:0),0),'','','','', '']);const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');downloadFile('GRIDNEX_energy_report.csv','\uFEFF'+csv,'text/csv;charset=utf-8');feedback('CSV report exported.');});
+document.getElementById('backupBtn').addEventListener('click',()=>{const backup={application:'GRIDNEX',version:'2.1',exportedAt:new Date().toISOString(),settings:appSettings};downloadFile('GRIDNEX_settings_backup.json',JSON.stringify(backup,null,2),'application/json');feedback('Settings backup downloaded.');});
+document.getElementById('restoreBtn').addEventListener('click',()=>document.getElementById('restoreFile').click());
+document.getElementById('restoreFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());const incoming=data.settings||data;if(!incoming||typeof incoming!=='object')throw Error('Invalid backup');appSettings={...DEFAULT_SETTINGS,...incoming,priorities:{...DEFAULT_SETTINGS.priorities,...(incoming.priorities||{})}};persistSettings();syncSettingsUI();applyPreferences();feedback('Backup restored successfully.');}catch(err){feedback('Could not restore: invalid backup file.');}e.target.value='';});
+document.getElementById('resetSettingsBtn').addEventListener('click',()=>{if(!confirm('Restore all GRIDNEX preferences to defaults? This will also remove the local PIN.'))return;appSettings={...DEFAULT_SETTINGS,priorities:{...DEFAULT_SETTINGS.priorities}};persistSettings();syncSettingsUI();applyPreferences();feedback('Default settings restored.');});
+function lockApp(){if(!appSettings.pin){feedback('Set a PIN before locking the application.');return;}document.getElementById('pinOverlay').classList.add('show');document.getElementById('unlockPin').value='';document.getElementById('pinError').textContent='';setTimeout(()=>document.getElementById('unlockPin').focus(),100);}
+document.getElementById('setPinBtn').addEventListener('click',()=>{const pin=prompt('Choose a 4 to 8 digit PIN:');if(pin===null)return;if(!/^\d{4,8}$/.test(pin)){feedback('PIN must contain 4 to 8 digits.');return;}const confirmPin=prompt('Confirm your PIN:');if(pin!==confirmPin){feedback('PIN confirmation did not match.');return;}appSettings.pin=pin;persistSettings();syncSettingsUI();feedback('Local PIN lock enabled.');});
+document.getElementById('removePinBtn').addEventListener('click',()=>{if(!appSettings.pin){feedback('No PIN is currently configured.');return;}const pin=prompt('Enter current PIN to remove it:');if(pin!==appSettings.pin){feedback('Incorrect PIN.');return;}appSettings.pin='';persistSettings();syncSettingsUI();feedback('PIN lock removed.');});
+document.getElementById('lockNowBtn').addEventListener('click',lockApp);
+function unlock(){if(document.getElementById('unlockPin').value===appSettings.pin){document.getElementById('pinOverlay').classList.remove('show');document.getElementById('pinError').textContent='';}else document.getElementById('pinError').textContent='Incorrect PIN. Try again.';}
+document.getElementById('unlockBtn').addEventListener('click',unlock);document.getElementById('unlockPin').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+// Refresh totals and threshold checks whenever a load changes state.
+window.gridnexSettingsCheck=checkThresholds;
+const totalObserver=new MutationObserver(()=>{});
+setInterval(()=>{if(document.getElementById('page-settings')?.classList.contains('active'))renderPriorityControls();},5000);
+syncSettingsUI();applyPreferences();if(appSettings.pin)lockApp();
+
+</script>
+</body>
+</html>
